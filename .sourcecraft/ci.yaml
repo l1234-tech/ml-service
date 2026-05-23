@@ -1,0 +1,16 @@
+on:
+  push:
+    - workflows: [sample-workflow]
+      filter:
+        branches: ["main"]
+
+workflows:
+  sample-workflow:
+    tasks:
+      - name: sample-task
+        cubes:
+          - name: sample-cube1
+            image: docker.io/library/python
+            script:
+              - python -m pip install --upgrade pip
+              - if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
