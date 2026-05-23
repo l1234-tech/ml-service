@@ -1,0 +1,10 @@
+[project]
+name = "dependencies_of_coding"
+version = "0.1.0"
+dependencies = [
+    "httpx>=0.27.2",
+    "matplotlib>=3.10.9 ; python_full_version >= '3.11'",
+    "numpy>=2.4.6 ; python_full_version >= '3.11'",
+    "pandas>=3.0.3 ; python_full_version >= '3.11'",
+    "seaborn>=0.13.2 ; python_full_version >= '3.11'",
+]
