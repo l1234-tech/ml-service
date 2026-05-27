@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🏠 Сервис одобрения ипотеки</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .header {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        .card h2 {
+            color: #333;
+            margin-bottom: 20px;
+            border-left: 4px solid #667eea;
+            padding-left: 15px;
+        }
+        .status {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        .status.loaded { background: #10b981; color: white; }
+        .status.not-loaded { background: #ef4444; color: white; }
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: transform 0.2s;
+        }
+        button:hover { transform: translateY(-2px); }
+        button.danger { background: #ef4444; }
+        input, textarea, select {
+            width: 100%;
+            padding: 10px;
+            margin: 8px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+        .result {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 15px;
+            overflow-x: auto;
+        }
+        pre {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+        .alert {
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+        .alert-success { background: #d1fae5; color: #065f46; }
+        .alert-error { background: #fee2e2; color: #991b1b; }
+        .alert-info { background: #dbeafe; color: #1e40af; }
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e5e7eb;
+        }
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border: none;
+            background: none;
+            color: #6b7280;
+        }
+        .tab.active {
+            color: #667eea;
+            border-bottom: 2px solid #667eea;
+        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .loading { display: none; text-align: center; padding: 20px; }
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>🏠 Сервис одобрения ипотеки</h1>
+        <p>Искусственный интеллект для оценки вероятности одобрения кредита</p>
+        <div style="margin-top: 10px;">
+            Статус модели: <span id="modelStatus" class="status not-loaded">Не загружена</span>
+            <span id="modelInfo" style="margin-left: 10px; font-size: 12px; color: #666;"></span>
+        </div>
+    </div>
+
+    <!-- Загрузка модели -->
+    <div class="card">
+        <h2>📤 1. Загрузите модель</h2>
+        <input type="file" id="modelFile" accept=".pkl">
+        <button onclick="uploadModel()">Загрузить модель</button>
+        <button onclick="clearModel()" class="danger">Удалить модель</button>
+        <div id="uploadResult"></div>
+    </div>
+
+    <!-- Табы для разных режимов -->
+    <div class="card">
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('single')">📝 Одиночное предсказание</button>
+            <button class="tab" onclick="switchTab('batch')">📊 Групповое предсказание</button>
+            <button class="tab" onclick="switchTab('csv')">📁 CSV файл</button>
+        </div>
+
+        <!-- Одиночное предсказание -->
+        <div id="singleTab" class="tab-content active">
+            <form id="singleForm">
+                <div class="form-grid">
+                    <div>
+                        <label>💰 Доход заявителя</label>
+                        <input type="number" name="ApplicantIncome" value="5000" step="100">
+                    </div>
+                    <div>
+                        <label>👥 Доход созаявителя</label>
+                        <input type="number" name="CoapplicantIncome" value="2000" step="100">
+                    </div>
+                    <div>
+                        <label>🏦 Сумма кредита</label>
+                        <input type="number" name="LoanAmount" value="150" step="10">
+                    </div>
+                    <div>
+                        <label>📅 Срок (месяцы)</label>
+                        <input type="number" name="Loan_Amount_Term" value="360" step="12">
+                    </div>
+                    <div>
+                        <label>📊 Кредитная история (0/1)</label>
+                        <input type="number" name="Credit_History" value="1" step="1" min="0" max="1">
+                    </div>
+                </div>
+                <button type="submit" style="margin-top: 15px;">🔮 Получить предсказание</button>
+            </form>
+            <div id="singleResult" class="result" style="display:none;"></div>
+        </div>
+
+        <!-- Групповое предсказание -->
+        <div id="batchTab" class="tab-content">
+            <p>Введите данные в формате JSON:</p>
+            <textarea id="batchData" rows="10" cols="50">[
+    {"ApplicantIncome": 5000, "CoapplicantIncome": 2000, "LoanAmount": 150, "Loan_Amount_Term": 360, "Credit_History": 1},
+    {"ApplicantIncome": 3000, "CoapplicantIncome": 0, "LoanAmount": 200, "Loan_Amount_Term": 360, "Credit_History": 0}
+]</textarea>
+            <button onclick="predictBatch()">📊 Предсказать для всех</button>
+            <div id="batchResult" class="result" style="display:none;"></div>
+        </div>
+
+        <!-- CSV предсказание -->
+        <div id="csvTab" class="tab-content">
+            <p>Загрузите CSV файл с данными клиентов:</p>
+            <input type="file" id="csvFile" accept=".csv">
+            <label style="margin-left: 10px;">
+                <input type="checkbox" id="hasTarget"> Файл содержит колонку Loan_Status
+            </label>
+            <button onclick="predictCSV()" style="margin-top: 15px;">📁 Обработать CSV</button>
+            <div id="csvResult" class="result" style="display:none;"></div>
+        </div>
+    </div>
+
+    <div id="loading" class="loading">
+        <div class="spinner"></div>
+        <p>Обработка...</p>
+    </div>
+</div>
+
+<script>
+    // Проверка статуса модели
+    async function checkModelStatus() {
+        try {
+            const response = await fetch('/model-status');
+            const data = await response.json();
+            const statusSpan = document.getElementById('modelStatus');
+            const infoSpan = document.getElementById('modelInfo');
+            
+            if (data.loaded) {
+                statusSpan.textContent = '✅ Загружена';
+                statusSpan.className = 'status loaded';
+                if (data.info) {
+                    infoSpan.textContent = `(Тип: ${data.info.type || 'ML model'})`;
+                }
+            } else {
+                statusSpan.textContent = '❌ Не загружена';
+                statusSpan.className = 'status not-loaded';
+                infoSpan.textContent = '';
+            }
+        } catch(e) {
+            console.error('Status check failed:', e);
+        }
+    }
+
+    // Загрузка модели
+    async function uploadModel() {
+        const fileInput = document.getElementById('modelFile');
+        const file = fileInput.files[0];
+        
+        if (!file) {
+            showMessage('uploadResult', 'Пожалуйста, выберите файл модели (.pkl)', 'error');
+            return;
+        }
+        
+        const formData = new FormData();
+        formData.append('file', file);
+        
+        showLoading(true);
+        try {
+            const response = await fetch('/upload-model', { method: 'POST', body: formData });
+            const result = await response.json();
+            
+            if (response.ok) {
+                showMessage('uploadResult', result.message, 'success');
+                checkModelStatus();
+            } else {
+                showMessage('uploadResult', result.detail || 'Ошибка загрузки', 'error');
+            }
+        } catch(e) {
+            showMessage('uploadResult', 'Ошибка соединения', 'error');
+        } finally {
+            showLoading(false);
+        }
+    }
+    
+    // Очистка модели
+    async function clearModel() {
+        if (!confirm('Удалить загруженную модель?')) return;
+        
+        try {
+            const response = await fetch('/clear-model', { method: 'DELETE' });
+            const result = await response.json();
+            showMessage('uploadResult', result.message, 'success');
+            checkModelStatus();
+        } catch(e) {
+            showMessage('uploadResult', 'Ошибка', 'error');
+        }
+    }
+    
+    // Одиночное предсказание
+    document.getElementById('singleForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const data = Object.fromEntries(formData.entries());
+        
+        // Конвертируем в числа
+        for (let key in data) {
+            data[key] = parseFloat(data[key]);
+        }
+        
+        showLoading(true);
+        try {
+            const response = await fetch('/predict', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            
+            const result = await response.json();
+            const resultDiv = document.getElementById('singleResult');
+            
+            if (response.ok) {
+                resultDiv.style.display = 'block';
+                resultDiv.innerHTML = `
+                    <h3>📊 Результат предсказания:</h3>
+                    <p><strong>Статус:</strong> ${result.loan_status}</p>
+                    <p><strong>Вероятность одобрения:</strong> ${(result.probability * 100).toFixed(1)}%</p>
+                    <p><strong>Уверенность модели:</strong> ${(result.confidence * 100).toFixed(1)}%</p>
+                    <button onclick="copyToClipboard('${JSON.stringify(result, null, 2)}')">📋 Копировать результат</button>
+                `;
+            } else {
+                resultDiv.style.display = 'block';
+                resultDiv.innerHTML = `<div class="alert alert-error">Ошибка: ${result.detail || 'Неизвестная ошибка'}</div>`;
+            }
+        } catch(e) {
+            alert('Ошибка: ' + e.message);
+        } finally {
+            showLoading(false);
+        }
+    });
+    
+    // Групповое предсказание
+    async function predictBatch() {
+        const dataText = document.getElementById('batchData').value;
+        try {
+            const data = JSON.parse(dataText);
+            showLoading(true);
+            
+            const response = await fetch('/predict-batch', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            
+            const result = await response.json();
+            const resultDiv = document.getElementById('batchResult');
+            resultDiv.style.display = 'block';
+            
+            if (response.ok) {
+                let html = '<h3>📊 Результаты:</h3><table border="1" style="width:100%; border-collapse: collapse;">';
+                html += '<tr><th>№</th><th>Статус</th><th>Вероятность</th></tr>';
+                result.predictions.forEach((pred, idx) => {
+                    html += `<tr>
+                        <td>${idx + 1}</td>
+                        <td>${pred.loan_status}</td>
+                        <td>${(pred.probability * 100).toFixed(1)}%</td>
+                    </tr>`;
+                });
+                html += '</table>';
+                resultDiv.innerHTML = html;
+            } else {
+                resultDiv.innerHTML = `<div class="alert alert-error">Ошибка: ${result.detail}</div>`;
+            }
+        } catch(e) {
+            alert('Ошибка парсинга JSON: ' + e.message);
+        } finally {
+            showLoading(false);
+        }
+    }
+    
+    // CSV предсказание
+    async function predictCSV() {
+        const fileInput = document.getElementById('csvFile');
+        const file = fileInput.files[0];
+        const hasTarget = document.getElementById('hasTarget').checked;
+        
+        if (!file) {
+            alert('Выберите CSV файл');
+            return;
+        }
+        
+        const formData = new FormData();
+        formData.append('file', file);
+        if (hasTarget) {
+            formData.append('target_column', 'Loan_Status');
+        }
+        
+        showLoading(true);
+        try {
+            const response = await fetch('/predict-csv', { method: 'POST', body: formData });
+            const result = await response.json();
+            const resultDiv = document.getElementById('csvResult');
+            resultDiv.style.display = 'block';
+            
+            if (response.ok) {
+                let html = `<h3>📊 Результаты обработки CSV:</h3>`;
+                html += `<p>Всего записей: ${result.total_rows}</p>`;
+                html += `<p>Одобрено: ${result.summary.approved}</p>`;
+                html += `<p>Отказано: ${result.summary.rejected}</p>`;
+                html += `<p>Средняя вероятность: ${(result.summary.avg_probability * 100).toFixed(1)}%</p>`;
+                if (result.roc_auc) {
+                    html += `<p>ROC-AUC: ${result.roc_auc}</p>`;
+                }
+                html += '<h4>Первые 10 предсказаний:</h4>';
+                html += '<table border="1" style="width:100%; border-collapse: collapse; font-size: 12px;">';
+                html += '<tr><th>#</th><th>Predicted Status</th><th>Probability</th></tr>';
+                result.predictions.slice(0, 10).forEach((pred, idx) => {
+                    html += `<tr>
+                        <td>${idx + 1}</td>
+                        <td>${pred.Predicted_Status}</td>
+                        <td>${(pred.Probability * 100).toFixed(1)}%</td>
+                    </tr>`;
+                });
+                html += '</table>';
+                resultDiv.innerHTML = html;
+            } else {
+                resultDiv.innerHTML = `<div class="alert alert-error">Ошибка: ${result.detail}</div>`;
+            }
+        } catch(e) {
+            alert('Ошибка: ' + e.message);
+        } finally {
+            showLoading(false);
+        }
+    }
+    
+    // Вспомогательные функции
+    function switchTab(tabName) {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+        
+        document.querySelector(`.tab[onclick="switchTab('${tabName}')"]`).classList.add('active');
+        document.getElementById(`${tabName}Tab`).classList.add('active');
+    }
+    
+    function showMessage(elementId, message, type) {
+        const div = document.getElementById(elementId);
+        div.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
+        setTimeout(() => { div.innerHTML = ''; }, 5000);
+    }
+    
+    function showLoading(show) {
+        document.getElementById('loading').style.display = show ? 'block' : 'none';
+    }
+    
+    function copyToClipboard(text) {
+        navigator.clipboard.writeText(text);
+        alert('Скопировано в буфер обмена!');
+    }
+    
+    // Запуск проверки статуса
+    setInterval(checkModelStatus, 5000);
+    checkModelStatus();
+</script>
+</body>
+</html>
