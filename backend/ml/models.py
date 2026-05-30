@@ -1,5 +1,4 @@
 import matplotlib
-matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from sklearn.metrics import roc_auc_score, roc_curve, classification_report
 from sklearn.linear_model import LogisticRegression
@@ -7,6 +6,8 @@ from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
 from sklearn.pipeline import Pipeline
 from .config import RANDOM_STATE
 from .preprocessing import create_preprocessing_pipeline, create_feature_selector
+
+matplotlib.use("Agg")
 
 
 def create_model_pipeline(model) -> Pipeline:

@@ -1,9 +1,6 @@
 import io
 import joblib
 import pandas as pd
-import numpy as np
-from pathlib import Path
-from typing import List, Optional
 
 from fastapi import FastAPI, UploadFile, File, HTTPException, Request
 from fastapi.responses import JSONResponse
@@ -152,7 +149,7 @@ async def upload_model(file: UploadFile = File(...)):
 
 
 @app.post("/predict")
-async def predict(data: List[dict]):
+async def predict(data: list[dict]):
     """
     Принимает массив записей с признаками клиента.
     Возвращает массив с признаками + loan_status (одобрено / отказ).

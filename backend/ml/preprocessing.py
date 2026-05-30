@@ -1,12 +1,11 @@
 import pandas as pd
-import numpy as np
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from sklearn.impute import SimpleImputer
 from sklearn.pipeline import Pipeline
 from sklearn.feature_selection import SelectFromModel
 from sklearn.ensemble import RandomForestClassifier
-from .config import CATEGORICAL_COLS, NUMERIC_COLS, IQR_COLS, RANDOM_STATE
+from .config import CATEGORICAL_COLS, NUMERIC_COLS, RANDOM_STATE
 
 
 def apply_iqr_capping(df: pd.DataFrame, columns: list[str]) -> pd.DataFrame:

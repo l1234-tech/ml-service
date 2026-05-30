@@ -3,9 +3,9 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-import pandas as pd
-from ml.config import PIPELINE_PATH, SAMPLE_PAYLOAD_PATH
-from ml.utils import load_object, load_json
+import pandas as pd  # noqa: E402
+from ml.config import PIPELINE_PATH, SAMPLE_PAYLOAD_PATH  # noqa: E402
+from ml.utils import load_object, load_json  # noqa: E402
 
 
 def main():
