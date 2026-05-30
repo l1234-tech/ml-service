@@ -3,7 +3,7 @@ from pathlib import Path
 RANDOM_STATE = 42
 TEST_SIZE = 0.2
 
-DATA_PATH = Path(r"C:\Users\mraja\Downloads\loan_data.csv")
+DATA_PATH = Path(r"datasets/loan_data.csv")
 
 BASE_DIR = Path(__file__).parent
 ARTIFACTS_DIR = BASE_DIR / "artifacts"
