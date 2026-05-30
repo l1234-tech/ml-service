@@ -19,4 +19,4 @@ python -m ml.train
 ```
 
 ## Зависимости
-Управляются через `pyproject.toml` (uv/pip).
+Управляются через `pyproject.toml` (uv/pip)
