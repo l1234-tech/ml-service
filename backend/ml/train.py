@@ -3,10 +3,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-import pandas as pd  # noqa: E402
-from sklearn.model_selection import train_test_split  # noqa: E402
+import pandas as pd
+from sklearn.model_selection import train_test_split
 
-from ml.config import (  # noqa: E402
+from ml.config import (
     DATA_PATH,
     ARTIFACTS_DIR,
     PIPELINE_PATH,
@@ -18,9 +18,9 @@ from ml.config import (  # noqa: E402
     TEST_SIZE,
     IQR_COLS,
 )
-from ml.preprocessing import apply_iqr_capping  # noqa: E402
-from ml.models import get_models, evaluate_model, plot_roc_curves  # noqa: E402
-from ml.utils import save_object, save_json  # noqa: E402
+from ml.preprocessing import apply_iqr_capping
+from ml.models import get_models, evaluate_model, plot_roc_curves
+from ml.utils import save_object, save_json
 
 
 def main():
