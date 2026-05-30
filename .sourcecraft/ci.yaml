@@ -2,7 +2,7 @@ on:
   push:
     - workflows: [lint-and-test]
       filter:
-        branches: ["main"]
+        branches: ["main" , "backend"]
 
 workflows:
   lint-and-test:
