@@ -1,6 +1,7 @@
 import io
 import joblib
 import pandas as pd
+from typing import Optional
 
 from fastapi import FastAPI, UploadFile, File, HTTPException, Request
 from fastapi.responses import JSONResponse
@@ -191,12 +192,19 @@ async def predict(data: list[dict]):
 
 
 @app.post("/predict-from-csv")
-async def predict_from_csv(file: UploadFile = File(...)):
+async def predict_from_csv(file: Optional[UploadFile] = None):
     """
     Принимает CSV-файл (сырой или предобработанный).
     Возвращает ROC-AUC (если есть loan_status) и полный датасет с predicted_loan_status.
     """
-    require_model()
+    if file is None:
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "status": "error",
+                "message": "Файл не передан. Загрузите CSV-файл.",
+            },
+        )
 
     if not file.filename.endswith(".csv"):
         raise HTTPException(
@@ -206,6 +214,8 @@ async def predict_from_csv(file: UploadFile = File(...)):
                 "message": "Файл должен быть в формате .csv",
             },
         )
+
+    require_model()
 
     try:
         contents = await file.read()
