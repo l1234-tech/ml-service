@@ -1,16 +1,25 @@
 on:
   push:
-    - workflows: [sample-workflow]
+    - workflows: [lint-and-test]
       filter:
         branches: ["main"]
 
 workflows:
-  sample-workflow:
+  lint-and-test:
     tasks:
-      - name: sample-task
+      - name: backend-lint
         cubes:
-          - name: sample-cube1
-            image: docker.io/library/python
+          - name: lint-python
+            image: docker.io/library/python:3.12
             script:
-              - python -m pip install --upgrade pip
-              - if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+              - pip install flake8 black
+              - flake8 backend/ --max-line-length=100 --exclude=__pycache__,ml/artifacts
+              - black --check --line-length=100 backend/ --exclude='ml/artifacts'
+
+      - name: backend-tests
+        cubes:
+          - name: test-api
+            image: docker.io/library/python:3.12
+            script:
+              - pip install fastapi uvicorn python-multipart httpx pytest pytest-asyncio pandas numpy scikit-learn joblib
+              - cd backend && python -m pytest tests/ -v
