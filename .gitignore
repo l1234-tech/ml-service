@@ -167,5 +167,9 @@ poetry.toml
 # ruff
 .ruff_cache/
 
+# ML artifacts
+*.pkl
+backend/ml/artifacts/
+
 # LSP config files
 pyrightconfig.json
