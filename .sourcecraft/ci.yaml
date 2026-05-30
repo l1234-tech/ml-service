@@ -1,8 +1,8 @@
 on:
   push:
     - workflows: [lint-and-test]
-      filter:
-        branches: ["main" , "backend"]
+  pull_request:
+    - workflows: [lint-and-test]
 
 workflows:
   lint-and-test:
