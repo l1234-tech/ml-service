@@ -2,7 +2,7 @@ on:
   push:
     - workflows: [sample-workflow]
       filter:
-        branches: ["main"]
+        branches: ["main" , "backend"]
 
 workflows:
   sample-workflow:
