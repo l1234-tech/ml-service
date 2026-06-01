@@ -3,27 +3,23 @@ import sys
 from pathlib import Path
 import tempfile
 import shutil
-from typing import Optional
 
 # Добавляем backend в путь
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from fastapi import FastAPI, File, UploadFile, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, FileResponse
-from fastapi.staticfiles import StaticFiles
-import pandas as pd
-import numpy as np
+from fastapi import FastAPI, File, UploadFile, HTTPException  # noqa: E402
+from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
+from fastapi.responses import FileResponse  # noqa: E402
+from fastapi.staticfiles import StaticFiles  # noqa: E402
+import pandas as pd  # noqa: E402
+import numpy as np  # noqa: E402
 
-from api.schemas import (
-    PredictRequest,
-    PredictResponse,
-    CsvPredictResponse,
+from api.schemas import (  # noqa: E402
     HealthResponse,
-    ModelUploadResponse
+    ModelUploadResponse,
 )
-from core.model import model_manager
-from ml.config import PIPELINE_PATH
+from core.model import model_manager  # noqa: E402
+from ml.config import PIPELINE_PATH  # noqa: E402
 
 
 # Авто-загрузка модели при старте
@@ -166,7 +162,7 @@ async def predict(data: list[dict]):
 
 
 @app.post("/predict-from-csv")
-async def predict_from_csv(file: Optional[UploadFile] = None):
+async def predict_from_csv(file: UploadFile = None):
     """
     Принимает CSV-файл (сырой или предобработанный).
     Возвращает ROC-AUC (если есть loan_status) и полный датасет с predicted_loan_status.

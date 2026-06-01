@@ -28,6 +28,7 @@ workflows:
                 - backend/ml/artifacts/
 
           - name: test-api
+            needs: ["train-model"]
             image: docker.io/library/python:3.12
             script:
               - pip install fastapi uvicorn python-multipart httpx pytest pytest-asyncio pandas numpy scikit-learn joblib
