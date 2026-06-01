@@ -1,7 +1,5 @@
-import os
 import shutil
 import sys
-import tempfile
 from pathlib import Path
 
 # Добавляем backend в путь
