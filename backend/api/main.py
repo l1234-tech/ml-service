@@ -15,7 +15,7 @@ from fastapi.staticfiles import StaticFiles  # noqa: E402
 
 from api.schemas import HealthResponse, ModelUploadResponse  # noqa: E402
 from core.model import model_manager  # noqa: E402
-from ml.config import PIPELINE_PATH  # noqa: E402
+from ml.config import PIPELINE_PATH, ROC_CURVES_PATH, SAMPLE_CSV_PATH, SAMPLE_CSV_WITH_TARGET_PATH  # noqa: E402
 
 
 # Авто-загрузка модели при старте
@@ -106,6 +106,50 @@ async def download_model():
         path=str(PIPELINE_PATH),
         filename="pipeline.pkl",
         media_type="application/octet-stream",
+    )
+
+
+@app.get("/roc-curve")
+async def get_roc_curve():
+    """Получить изображение ROC-кривой"""
+    if not ROC_CURVES_PATH.exists():
+        raise HTTPException(
+            status_code=404,
+            detail={
+                "status": "error",
+                "message": "ROC-кривая не найдена. Сначала обучите модель.",
+            },
+        )
+
+    return FileResponse(
+        path=str(ROC_CURVES_PATH),
+        media_type="image/png",
+    )
+
+
+@app.get("/sample-csv")
+async def get_sample_csv():
+    """Скачать sample CSV файл для проверки предсказания"""
+    path = SAMPLE_CSV_WITH_TARGET_PATH
+    filename = "sample_data_with_target.csv"
+
+    if not path.exists():
+        path = SAMPLE_CSV_PATH
+        filename = "sample_data.csv"
+
+    if not path.exists():
+        raise HTTPException(
+            status_code=404,
+            detail={
+                "status": "error",
+                "message": "Sample CSV не найден. Сначала обучите модель.",
+            },
+        )
+
+    return FileResponse(
+        path=str(path),
+        filename=filename,
+        media_type="text/csv",
     )
 
 
