@@ -99,16 +99,16 @@ async def upload_model(file: UploadFile = File(...)):
             status_code=400, detail="Файл должен иметь расширение .pkl"
         )
 
-    # Создаём директорию для артефактов, если её нет
-    PIPELINE_PATH.parent.mkdir(parents=True, exist_ok=True)
+    # Сохраняем временный файл
+    temp_dir = tempfile.mkdtemp()
+    temp_path = os.path.join(temp_dir, file.filename)
 
     try:
-        # Сохраняем файл модели в постоянное место (не во временную папку!)
-        with open(str(PIPELINE_PATH), "wb") as buffer:
+        with open(temp_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
 
         # Загружаем модель
-        success = model_manager.load_model(str(PIPELINE_PATH))
+        success = model_manager.load_model(temp_path)
 
         if success:
             return ModelUploadResponse(
@@ -117,22 +117,14 @@ async def upload_model(file: UploadFile = File(...)):
                 model_type=model_manager.model_type,
             )
         else:
-            # Если не удалось загрузить — удаляем файл
-            PIPELINE_PATH.unlink(missing_ok=True)
             raise HTTPException(
                 status_code=400,
                 detail="Не удалось загрузить модель. Проверьте файл.",
             )
 
-    except HTTPException:
-        raise
-    except Exception as e:
-        # Если ошибка — удаляем файл
-        PIPELINE_PATH.unlink(missing_ok=True)
-        raise HTTPException(
-            status_code=400,
-            detail=f"Ошибка при загрузке модели: {str(e)}",
-        )
+    finally:
+        # Очищаем временные файлы
+        shutil.rmtree(temp_dir, ignore_errors=True)
 
 
 @app.post("/predict")
