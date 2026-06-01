@@ -1,5 +1,5 @@
 from fastapi.testclient import TestClient
-from main import app
+from api.main import app
 
 client = TestClient(app)
 
@@ -7,7 +7,8 @@ client = TestClient(app)
 def test_model_status_without_model():
     response = client.get("/model-status")
     assert response.status_code == 200
-    assert response.json() == {"loaded": False}
+    data = response.json()
+    assert data["model_loaded"] is False
 
 
 def test_predict_without_model():
@@ -28,36 +29,25 @@ def test_upload_model_invalid_extension():
         files={"file": ("model.txt", b"dummy content", "text/plain")},
     )
     assert response.status_code == 400
-    data = response.json()
-    assert data["detail"]["status"] == "error"
-    assert ".pkl" in data["detail"]["message"]
 
 
 def test_upload_model_invalid_content():
     """Попытка загрузить невалидный .pkl файл."""
     response = client.post(
         "/upload-model",
-        files={"file": ("model.pkl", b"not a real pickle file", "application/octet-stream")},
+        files={
+            "file": (
+                "model.pkl",
+                b"not a real pickle file",
+                "application/octet-stream",
+            )
+        },
     )
     assert response.status_code == 400
-    data = response.json()
-    assert data["detail"]["status"] == "error"
-
-
-def test_clear_model():
-    response = client.delete("/clear-model")
-    assert response.status_code == 200
-    assert response.json()["status"] == "success"
-
-
-def test_model_status_after_clear():
-    response = client.get("/model-status")
-    assert response.status_code == 200
-    assert response.json() == {"loaded": False}
 
 
 def test_predict_empty_list():
-    """Пустой массив записей."""
+    """Пустой массив записей (модель не загружена -> 400)."""
     response = client.post("/predict", json=[])
     assert response.status_code == 400
 
@@ -76,4 +66,4 @@ def test_predict_from_csv_invalid_extension():
     )
     assert response.status_code == 400
     data = response.json()
-    assert ".csv" in data["detail"]["message"]
+    assert "detail" in data

@@ -1,33 +1,21 @@
-import os
-import sys
-from pathlib import Path
-import tempfile
 import shutil
+import sys
+import traceback
+from pathlib import Path
 
 # Добавляем backend в путь
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from fastapi import FastAPI, File, UploadFile, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, FileResponse
-from fastapi.staticfiles import StaticFiles
-import pandas as pd
-import numpy as np
+import numpy as np  # noqa: E402
+import pandas as pd  # noqa: E402
+from fastapi import Body, FastAPI, File, HTTPException, UploadFile  # noqa: E402
+from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
+from fastapi.responses import FileResponse  # noqa: E402
+from fastapi.staticfiles import StaticFiles  # noqa: E402
 
-from api.schemas import (
-    PredictRequest, 
-    PredictResponse, 
-    CsvPredictResponse,
-    HealthResponse,
-    ModelUploadResponse
-)
-from core.model import model_manager
-from core.preprocessing import (
-    create_dataframe_from_raw, 
-    validate_csv_columns,
-    calculate_metrics
-)
-from ml.config import PIPELINE_PATH
+from api.schemas import HealthResponse, ModelUploadResponse  # noqa: E402
+from core.model import model_manager  # noqa: E402
+from ml.config import PIPELINE_PATH, ROC_CURVES_PATH, SAMPLE_CSV_PATH, SAMPLE_CSV_WITH_TARGET_PATH  # noqa: E402
 
 
 # Авто-загрузка модели при старте
@@ -47,13 +35,13 @@ else:
 app = FastAPI(
     title="ML Сервис одобрения ипотеки",
     description="API для предсказания одобрения ипотечных заявок",
-    version="1.0.0"
+    version="1.0.0",
 )
 
 # CORS для фронтенда
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # В продакшене указать конкретные домены
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -62,7 +50,9 @@ app.add_middleware(
 # Настройка статических файлов фронтенда
 FRONTEND_DIR = Path(__file__).parent.parent.parent / "frontend"
 if FRONTEND_DIR.exists():
-    app.mount("/static", StaticFiles(directory=str(FRONTEND_DIR / "css")), name="css")
+    app.mount(
+        "/static", StaticFiles(directory=str(FRONTEND_DIR / "css")), name="css"
+    )
     app.mount("/js", StaticFiles(directory=str(FRONTEND_DIR / "js")), name="js")
     print(f"[OK] Frontend static files mounted from: {FRONTEND_DIR}")
 else:
@@ -86,148 +76,267 @@ async def health_check():
         status="ok",
         model_loaded=status["loaded"],
         model_type=status["model_type"],
-        version="1.0.0"
+        version="1.0.0",
+    )
+
+
+@app.get("/model-status")
+async def model_status():
+    """Статус загрузки модели (без лишних полей)"""
+    status = model_manager.get_status()
+    return {
+        "model_loaded": status["loaded"],
+        "model_type": status["model_type"],
+    }
+
+
+@app.get("/download-model")
+async def download_model():
+    """Скачать файл модели (.pkl)"""
+    if not PIPELINE_PATH.exists():
+        raise HTTPException(
+            status_code=404,
+            detail={
+                "status": "error",
+                "message": "Модель не найдена. Сначала загрузите или обучите модель.",
+            },
+        )
+
+    return FileResponse(
+        path=str(PIPELINE_PATH),
+        filename="pipeline.pkl",
+        media_type="application/octet-stream",
+    )
+
+
+@app.get("/roc-curve")
+async def get_roc_curve():
+    """Получить изображение ROC-кривой"""
+    if not ROC_CURVES_PATH.exists():
+        raise HTTPException(
+            status_code=404,
+            detail={
+                "status": "error",
+                "message": "ROC-кривая не найдена. Сначала обучите модель.",
+            },
+        )
+
+    return FileResponse(
+        path=str(ROC_CURVES_PATH),
+        media_type="image/png",
+    )
+
+
+@app.get("/sample-csv")
+async def get_sample_csv():
+    """Скачать sample CSV файл для проверки предсказания"""
+    path = SAMPLE_CSV_WITH_TARGET_PATH
+    filename = "sample_data_with_target.csv"
+
+    if not path.exists():
+        path = SAMPLE_CSV_PATH
+        filename = "sample_data.csv"
+
+    if not path.exists():
+        raise HTTPException(
+            status_code=404,
+            detail={
+                "status": "error",
+                "message": "Sample CSV не найден. Сначала обучите модель.",
+            },
+        )
+
+    return FileResponse(
+        path=str(path),
+        filename=filename,
+        media_type="text/csv",
     )
 
 
 @app.post("/upload-model", response_model=ModelUploadResponse)
 async def upload_model(file: UploadFile = File(...)):
     """Загрузка модели (.pkl файл)"""
-    if not file.filename.endswith('.pkl'):
+    if not file.filename.endswith(".pkl"):
         raise HTTPException(
-            status_code=400, 
-            detail="Файл должен иметь расширение .pkl"
+            status_code=400, detail="Файл должен иметь расширение .pkl"
         )
-    
-    # Сохраняем временный файл
-    temp_dir = tempfile.mkdtemp()
-    temp_path = os.path.join(temp_dir, file.filename)
-    
+
+    # Создаём директорию для артефактов, если её нет
+    PIPELINE_PATH.parent.mkdir(parents=True, exist_ok=True)
+
     try:
-        with open(temp_path, "wb") as buffer:
+        # Сохраняем файл модели в постоянное место
+        with open(str(PIPELINE_PATH), "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
-        
+
         # Загружаем модель
-        success = model_manager.load_model(temp_path)
-        
+        success = model_manager.load_model(str(PIPELINE_PATH))
+
         if success:
             return ModelUploadResponse(
                 success=True,
                 message="Модель успешно загружена",
-                model_type=model_manager.model_type
+                model_type=model_manager.model_type,
             )
         else:
+            # Если не удалось загрузить — удаляем файл
+            PIPELINE_PATH.unlink(missing_ok=True)
             raise HTTPException(
                 status_code=400,
-                detail="Не удалось загрузить модель. Проверьте файл."
+                detail="Не удалось загрузить модель. Проверьте файл.",
             )
-    
-    finally:
-        # Очищаем временные файлы
-        shutil.rmtree(temp_dir, ignore_errors=True)
 
-
-@app.post("/predict", response_model=PredictResponse)
-async def predict(request: PredictRequest):
-    """Одиночное предсказание"""
-    if not model_manager.is_loaded:
-        raise HTTPException(
-            status_code=400,
-            detail="Модель не загружена. Сначала загрузите .pkl файл через /upload-model"
-        )
-    
-    try:
-        # Преобразуем запрос в DataFrame
-        data = request.model_dump()
-        df = create_dataframe_from_raw(data)
-        
-        # Делаем предсказание
-        predictions, probabilities = model_manager.predict(df)
-        
-        prediction = int(predictions[0])
-        probability = float(probabilities[0][1])  # Вероятность класса 1
-        
-        return PredictResponse(
-            prediction=prediction,
-            probability=probability,
-            status="Approved" if prediction == 1 else "Rejected"
-        )
-    
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Ошибка предсказания: {str(e)}")
+        # Если ошибка — удаляем файл
+        PIPELINE_PATH.unlink(missing_ok=True)
+        raise HTTPException(
+            status_code=400,
+            detail=f"Ошибка при загрузке модели: {str(e)}",
+        )
 
 
-@app.post("/predict-csv", response_model=CsvPredictResponse)
-async def predict_csv(
-    file: UploadFile = File(...),
-    has_target: bool = False
+@app.post("/predict")
+async def predict(
+    data: list = Body(..., description="Список записей с признаками клиента"),
 ):
-    """Предсказание по CSV файлу"""
+    """
+    Принимает одну или несколько записей с признаками клиента.
+    Возвращает массив с признаками и loan_status (одобрено / отказ).
+    """
     if not model_manager.is_loaded:
         raise HTTPException(
             status_code=400,
-            detail="Модель не загружена. Сначала загрузите .pkl файл через /upload-model"
+            detail={
+                "status": "error",
+                "message": "Модель не загружена. Сначала загрузите модель через /upload-model",
+            },
         )
-    
-    if not file.filename.endswith('.csv'):
+
+    try:
+        df = pd.DataFrame(data)
+
+        # Делаем предсказание через pipeline (он сам обработает категориальные признаки)
+        predictions, probabilities = model_manager.predict(df)
+
+        results = []
+        for i in range(len(df)):
+            row = df.iloc[i].to_dict()
+            row["loan_status"] = (
+                "Approved" if int(predictions[i]) == 1 else "Rejected"
+            )
+            row["probability"] = round(float(probabilities[i][1]), 4)
+            results.append(row)
+
+        return {"predictions": results}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        traceback.print_exc()
+        print(f"[ERROR] predict: {str(e)}")
         raise HTTPException(
             status_code=400,
-            detail="Файл должен иметь расширение .csv"
+            detail={
+                "status": "error",
+                "message": f"Ошибка предсказания: {str(e)}",
+            },
         )
-    
+
+
+@app.post("/predict-from-csv")
+async def predict_from_csv(file: UploadFile = None):
+    """
+    Принимает CSV-файл (сырой или предобработанный).
+    Возвращает ROC-AUC (если есть loan_status) и полный датасет с predicted_loan_status.
+    """
+    if file is None:
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "status": "error",
+                "message": "Файл не передан. Загрузите CSV-файл.",
+            },
+        )
+
+    if not model_manager.is_loaded:
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "status": "error",
+                "message": "Модель не загружена. Сначала загрузите модель через /upload-model",
+            },
+        )
+
+    if not file.filename.endswith(".csv"):
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "status": "error",
+                "message": "Файл должен быть в формате .csv",
+            },
+        )
+
     try:
         # Читаем CSV
         df = pd.read_csv(file.file)
-        
-        # Валидируем колонки
-        validate_csv_columns(df, require_target=has_target)
-        
-        # Сохраняем target если есть
-        y_true = None
-        if has_target and 'loan_status' in df.columns:
-            y_true = df['loan_status'].values
-            df = df.drop('loan_status', axis=1)
-        
-        # Делаем предсказания
-        predictions, probabilities = model_manager.predict(df)
-        
-        # Рассчитываем метрики
+
+        has_target = "loan_status" in df.columns
+        y_true = df["loan_status"].values if has_target else None
+
+        # Удаляем целевую переменную из признаков (модель обучалась без неё)
+        X = df.drop(columns=["loan_status"]) if has_target else df
+
+        # Делаем предсказания через pipeline
+        predictions, probabilities = model_manager.predict(X)
+
+        # Вычисляем ROC-AUC если есть целевая переменная
         roc_auc = None
-        confusion_matrix = None
-        if y_true is not None:
-            metrics = calculate_metrics(y_true, predictions, probabilities[:, 1])
-            roc_auc = metrics.get('roc_auc')
-            confusion_matrix = metrics.get('confusion_matrix')
-        
-        # Статистика
-        approved_count = int(np.sum(predictions == 1))
-        rejected_count = int(np.sum(predictions == 0))
-        avg_probability = float(np.mean(probabilities[:, 1]))
-        
-        return CsvPredictResponse(
-            predictions=predictions.tolist(),
-            probabilities=probabilities[:, 1].tolist(),
-            rows_processed=len(df),
-            roc_auc=roc_auc,
-            confusion_matrix=confusion_matrix,
-            approved_count=approved_count,
-            rejected_count=rejected_count,
-            avg_probability=avg_probability
-        )
-    
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        if has_target and len(np.unique(y_true)) > 1:
+            from sklearn.metrics import roc_auc_score
+
+            roc_auc = round(float(roc_auc_score(y_true, probabilities[:, 1])), 4)
+
+        results = []
+        for i in range(len(X)):
+            row = X.iloc[i].to_dict()
+            row["predicted_loan_status"] = (
+                "Approved" if int(predictions[i]) == 1 else "Rejected"
+            )
+            row["probability"] = round(float(probabilities[i][1]), 4)
+            results.append(row)
+
+        response = {
+            "total_rows": len(X),
+            "predictions": results,
+        }
+        if roc_auc is not None:
+            response["roc_auc"] = roc_auc
+
+        return response
+
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Ошибка обработки CSV: {str(e)}")
+        traceback.print_exc()
+        print(f"[ERROR] predict-from-csv: {str(e)}")
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "status": "error",
+                "message": f"Ошибка обработки CSV: {str(e)}",
+            },
+        )
 
 
 def run():
     """Функция для запуска через скрипт"""
     import uvicorn
+
     uvicorn.run("backend.api.main:app", host="0.0.0.0", port=8000, reload=True)
 
 
 if __name__ == "__main__":
     run()
+# end of file

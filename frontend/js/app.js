@@ -30,20 +30,16 @@ function init() {
 function navigate(page) {
     if (!pages[page]) return;
     
-    // Скрываем все страницы
     document.querySelectorAll('.page').forEach(p => {
         p.classList.remove('active');
     });
     
-    // Показываем нужную страницу
     const pageElement = document.getElementById(pages[page].id);
     if (pageElement) {
         pageElement.classList.add('active');
     }
     
     state.currentPage = page;
-    
-    // Обновляем заголовок
     document.title = `${pages[page].title} - Сервис одобрения ипотеки`;
 }
 
@@ -76,16 +72,20 @@ function updateModelStatusUI() {
 // Настройка обработчиков событий
 function setupEventListeners() {
     // === Страница 1: Выбор модели ===
-    
-    // Выбор файла
     const uploadArea = document.getElementById('upload-area');
     const fileInput = document.getElementById('model-file');
     const btnSelectFile = document.getElementById('btn-select-file');
     
-    btnSelectFile.addEventListener('click', () => fileInput.click());
-    uploadArea.addEventListener('click', () => fileInput.click());
+    btnSelectFile.addEventListener('click', (e) => {
+        e.stopPropagation();
+        fileInput.click();
+    });
+    uploadArea.addEventListener('click', (e) => {
+        if (e.target === uploadArea || e.target.closest('.upload-icon, .upload-text')) {
+            fileInput.click();
+        }
+    });
     
-    // Drag & Drop
     uploadArea.addEventListener('dragover', (e) => {
         e.preventDefault();
         uploadArea.classList.add('dragover');
@@ -110,16 +110,13 @@ function setupEventListeners() {
         }
     });
     
-    // Загрузка модели
     document.getElementById('btn-upload').addEventListener('click', uploadModel);
-    
-    // Далее
+    document.getElementById('btn-download-model').addEventListener('click', downloadModel);
     document.getElementById('btn-next-to-mode').addEventListener('click', () => {
         navigate('mode-select');
     });
     
     // === Страница 2: Выбор режима ===
-    
     document.getElementById('mode-single').addEventListener('click', () => {
         navigate('single-predict');
     });
@@ -133,7 +130,6 @@ function setupEventListeners() {
     });
     
     // === Страница 3: Одиночное предсказание ===
-    
     document.getElementById('single-predict-form').addEventListener('submit', handleSinglePredict);
     
     document.getElementById('btn-back-to-mode-from-single').addEventListener('click', () => {
@@ -142,14 +138,19 @@ function setupEventListeners() {
     });
     
     // === Страница 4: CSV предсказание ===
-    
-    // Выбор CSV файла
     const csvUploadArea = document.getElementById('csv-upload-area');
     const csvFileInput = document.getElementById('csv-file');
     const btnSelectCsv = document.getElementById('btn-select-csv');
     
-    btnSelectCsv.addEventListener('click', () => csvFileInput.click());
-    csvUploadArea.addEventListener('click', () => csvFileInput.click());
+    btnSelectCsv.addEventListener('click', (e) => {
+        e.stopPropagation();
+        csvFileInput.click();
+    });
+    csvUploadArea.addEventListener('click', (e) => {
+        if (e.target === csvUploadArea || e.target.closest('.upload-icon, .upload-text')) {
+            csvFileInput.click();
+        }
+    });
     
     csvUploadArea.addEventListener('dragover', (e) => {
         e.preventDefault();
@@ -175,13 +176,8 @@ function setupEventListeners() {
         }
     });
     
-    // Обработка CSV
     document.getElementById('btn-process-csv').addEventListener('click', processCsv);
-    
-    // Скачать результаты
     document.getElementById('btn-download-csv').addEventListener('click', downloadResults);
-    
-    // Показать все
     document.getElementById('btn-show-all').addEventListener('click', showAllResults);
     
     document.getElementById('btn-back-to-mode-from-csv').addEventListener('click', () => {
@@ -200,7 +196,6 @@ function handleModelFileSelect(file) {
     
     state.selectedModelFile = file;
     
-    // Показываем информацию о файле
     document.getElementById('file-name').textContent = file.name;
     document.getElementById('file-size').textContent = formatFileSize(file.size);
     
@@ -220,13 +215,11 @@ async function uploadModel() {
         state.modelType = result.model_type;
         updateModelStatusUI();
         
-        // Показываем статус
         const statusEl = document.getElementById('status-message');
         statusEl.textContent = result.message;
         statusEl.className = 'status-message success';
         toggleElement('upload-status', true);
         
-        // Показываем информацию о модели
         document.getElementById('model-type').textContent = result.model_type || 'Неизвестно';
         toggleElement('model-info-card', true);
         
@@ -239,6 +232,11 @@ async function uploadModel() {
     } finally {
         setButtonLoading('btn-upload', false);
     }
+}
+
+function downloadModel() {
+    const API_BASE = window.API_URL || 'http://localhost:8000';
+    window.open(`${API_BASE}/download-model`, '_blank');
 }
 
 // === Обработчики страницы 3 ===
@@ -256,7 +254,7 @@ async function handleSinglePredict(e) {
     setButtonLoading(e.submitter, true);
     
     try {
-        const result = await api.predict(data);
+        const result = await api.predict([data]);
         showPredictionResult(result);
     } catch (e) {
         console.error('Ошибка предсказания:', e);
@@ -271,18 +269,23 @@ function showPredictionResult(result) {
     const probEl = document.getElementById('probability-value');
     const cardEl = document.getElementById('result-card');
     
-    const isApproved = result.prediction === 1;
+    const prediction = result.predictions && result.predictions[0];
+    if (!prediction) {
+        showError('Неожиданный формат ответа от сервера');
+        return;
+    }
+    
+    const isApproved = prediction.loan_status === 'Approved';
     
     statusEl.textContent = isApproved ? '✅ Approved' : '❌ Rejected';
     statusEl.className = `result-status ${isApproved ? 'approved' : 'rejected'}`;
     
-    probEl.textContent = formatPercent(result.probability);
+    probEl.textContent = formatPercent(prediction.probability);
     
     cardEl.style.borderColor = isApproved ? 'var(--success-color)' : 'var(--danger-color)';
     
     toggleElement('prediction-result', true);
     
-    // Прокручиваем к результату
     resultEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
@@ -301,7 +304,6 @@ function handleCsvFileSelect(file) {
     
     state.selectedCsvFile = file;
     
-    // Показываем информацию о файле
     document.getElementById('csv-file-name').textContent = file.name;
     document.getElementById('csv-file-size').textContent = formatFileSize(file.size);
     
@@ -327,25 +329,73 @@ async function processCsv() {
     }
 }
 
+function renderResultsTable(result, limit) {
+    const tbody = document.getElementById('results-tbody');
+    tbody.innerHTML = '';
+    
+    const predictions = result.predictions || [];
+    const count = Math.min(predictions.length, limit);
+    
+    for (let i = 0; i < count; i++) {
+        const tr = document.createElement('tr');
+        const pred = predictions[i];
+        
+        const tdNum = document.createElement('td');
+        tdNum.textContent = i + 1;
+        tr.appendChild(tdNum);
+        
+        const tdAge = document.createElement('td');
+        tdAge.textContent = pred.person_age !== undefined ? pred.person_age : '-';
+        tr.appendChild(tdAge);
+        
+        const tdIncome = document.createElement('td');
+        tdIncome.textContent = pred.person_income !== undefined ? formatNumber(pred.person_income) : '-';
+        tr.appendChild(tdIncome);
+        
+        const tdAmount = document.createElement('td');
+        tdAmount.textContent = pred.loan_amnt !== undefined ? formatNumber(pred.loan_amnt) : '-';
+        tr.appendChild(tdAmount);
+        
+        const tdScore = document.createElement('td');
+        tdScore.textContent = pred.credit_score !== undefined ? pred.credit_score : '-';
+        tr.appendChild(tdScore);
+        
+        const tdStatus = document.createElement('td');
+        const isApproved = pred.predicted_loan_status === 'Approved';
+        tdStatus.innerHTML = `<span class="status-badge ${isApproved ? 'approved' : 'rejected'}">
+            ${isApproved ? 'Одобрено' : 'Отказано'}
+        </span>`;
+        tr.appendChild(tdStatus);
+        
+        const tdProb = document.createElement('td');
+        tdProb.textContent = formatPercent(pred.probability || 0);
+        tr.appendChild(tdProb);
+        
+        tbody.appendChild(tr);
+    }
+}
+
 function showCsvResults(result) {
-    // Сводка
     document.getElementById('total-rows').textContent = formatNumber(result.rows_processed);
     document.getElementById('approved-count').textContent = formatNumber(result.approved_count);
     document.getElementById('rejected-count').textContent = formatNumber(result.rejected_count);
     document.getElementById('avg-probability').textContent = formatPercent(result.avg_probability);
     
-    // ROC-AUC
     if (result.roc_auc !== null && result.roc_auc !== undefined) {
         document.getElementById('roc-auc-value').textContent = result.roc_auc.toFixed(3);
         toggleElement('roc-auc-display', true);
+        
+        const API_BASE = window.API_URL || 'http://localhost:8000';
+        const rocImg = document.getElementById('roc-curve-img');
+        rocImg.src = `${API_BASE}/roc-curve?t=${Date.now()}`;
+        toggleElement('roc-curve-container', true);
     } else {
         toggleElement('roc-auc-display', false);
+        toggleElement('roc-curve-container', false);
     }
     
-    // Таблица (первые 50)
     renderResultsTable(result, 50);
     
-    // Кнопка "Показать все"
     const showAllBtn = document.getElementById('btn-show-all');
     if (result.rows_processed > 50) {
         showAllBtn.style.display = 'block';
@@ -356,56 +406,7 @@ function showCsvResults(result) {
     
     toggleElement('csv-results', true);
     
-    // Прокручиваем к результатам
     document.getElementById('csv-results').scrollIntoView({ behavior: 'smooth' });
-}
-
-function renderResultsTable(result, limit) {
-    const tbody = document.getElementById('results-tbody');
-    tbody.innerHTML = '';
-    
-    const count = Math.min(result.predictions.length, limit);
-    
-    for (let i = 0; i < count; i++) {
-        const tr = document.createElement('tr');
-        
-        // Номер
-        const tdNum = document.createElement('td');
-        tdNum.textContent = i + 1;
-        tr.appendChild(tdNum);
-        
-        // Данные (заглушки для демо)
-        const tdAge = document.createElement('td');
-        tdAge.textContent = '-';
-        tr.appendChild(tdAge);
-        
-        const tdIncome = document.createElement('td');
-        tdIncome.textContent = '-';
-        tr.appendChild(tdIncome);
-        
-        const tdAmount = document.createElement('td');
-        tdAmount.textContent = '-';
-        tr.appendChild(tdAmount);
-        
-        const tdScore = document.createElement('td');
-        tdScore.textContent = '-';
-        tr.appendChild(tdScore);
-        
-        // Статус
-        const tdStatus = document.createElement('td');
-        const isApproved = result.predictions[i] === 1;
-        tdStatus.innerHTML = `<span class="status-badge ${isApproved ? 'approved' : 'rejected'}">
-            ${isApproved ? 'Одобрено' : 'Отказано'}
-        </span>`;
-        tr.appendChild(tdStatus);
-        
-        // Вероятность
-        const tdProb = document.createElement('td');
-        tdProb.textContent = formatPercent(result.probabilities[i]);
-        tr.appendChild(tdProb);
-        
-        tbody.appendChild(tr);
-    }
 }
 
 function showAllResults() {
@@ -418,10 +419,11 @@ function showAllResults() {
 function downloadResults() {
     if (!state.csvResults) return;
     
-    const data = state.csvResults.predictions.map((pred, i) => ({
+    const predictions = state.csvResults.predictions || [];
+    const data = predictions.map((pred, i) => ({
         '№': i + 1,
-        'Prediction': pred === 1 ? 'Approved' : 'Rejected',
-        'Probability': state.csvResults.probabilities[i].toFixed(4)
+        'Prediction': pred.predicted_loan_status,
+        'Probability': (pred.probability || 0).toFixed(4)
     }));
     
     downloadCSV(data, 'predictions.csv');

@@ -63,10 +63,16 @@
                         <span class="info-label">Статус:</span>
                         <span class="info-value status-success">Загружена</span>
                     </div>
-                    <button class="btn btn-primary btn-next" id="btn-next-to-mode">
-                        Далее
-                        <span class="btn-icon">→</span>
-                    </button>
+                    <div class="model-actions">
+                        <button class="btn btn-secondary" id="btn-download-model">
+                            <span class="btn-icon">💾</span>
+                            Скачать модель
+                        </button>
+                        <button class="btn btn-primary btn-next" id="btn-next-to-mode">
+                            Далее
+                            <span class="btn-icon">→</span>
+                        </button>
+                    </div>
                 </div>
             </section>
 
@@ -317,6 +323,10 @@
                         <div class="roc-auc-display" id="roc-auc-display" style="display: none;">
                             <div class="roc-auc-value" id="roc-auc-value"></div>
                             <span class="roc-auc-label">ROC-AUC</span>
+                        </div>
+                        <div class="roc-curve-container" id="roc-curve-container" style="display: none;">
+                            <h4>ROC-кривая</h4>
+                            <img id="roc-curve-img" class="roc-curve-img" alt="ROC-кривая">
                         </div>
                     </div>
 
