@@ -1,5 +1,6 @@
 import shutil
 import sys
+import traceback
 from pathlib import Path
 
 # Добавляем backend в путь
@@ -170,6 +171,8 @@ async def predict(
     except HTTPException:
         raise
     except Exception as e:
+        traceback.print_exc()
+        print(f"[ERROR] predict: {str(e)}")
         raise HTTPException(
             status_code=400,
             detail={
@@ -219,8 +222,11 @@ async def predict_from_csv(file: UploadFile = None):
         has_target = "loan_status" in df.columns
         y_true = df["loan_status"].values if has_target else None
 
+        # Удаляем целевую переменную из признаков (модель обучалась без неё)
+        X = df.drop(columns=["loan_status"]) if has_target else df
+
         # Делаем предсказания через pipeline
-        predictions, probabilities = model_manager.predict(df)
+        predictions, probabilities = model_manager.predict(X)
 
         # Вычисляем ROC-AUC если есть целевая переменная
         roc_auc = None
@@ -230,8 +236,8 @@ async def predict_from_csv(file: UploadFile = None):
             roc_auc = round(float(roc_auc_score(y_true, probabilities[:, 1])), 4)
 
         results = []
-        for i in range(len(df)):
-            row = df.iloc[i].to_dict()
+        for i in range(len(X)):
+            row = X.iloc[i].to_dict()
             row["predicted_loan_status"] = (
                 "Approved" if int(predictions[i]) == 1 else "Rejected"
             )
@@ -239,7 +245,7 @@ async def predict_from_csv(file: UploadFile = None):
             results.append(row)
 
         response = {
-            "total_rows": len(df),
+            "total_rows": len(X),
             "predictions": results,
         }
         if roc_auc is not None:
@@ -250,6 +256,8 @@ async def predict_from_csv(file: UploadFile = None):
     except HTTPException:
         raise
     except Exception as e:
+        traceback.print_exc()
+        print(f"[ERROR] predict-from-csv: {str(e)}")
         raise HTTPException(
             status_code=400,
             detail={

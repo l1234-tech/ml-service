@@ -1,9 +1,14 @@
 import sys
 from pathlib import Path
+
 import joblib
 import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
+
+from ml.config import CATEGORICAL_COLS, NUMERIC_COLS  # noqa: E402
+from sklearn.compose import ColumnTransformer  # noqa: E402
+from sklearn.preprocessing import OneHotEncoder, StandardScaler  # noqa: E402
 
 
 class ModelManager:
@@ -13,6 +18,7 @@ class ModelManager:
         self._pipeline = None
         self._model_type = None
         self._is_loaded = False
+        self._is_pipeline = False
 
     @property
     def is_loaded(self):
@@ -31,9 +37,10 @@ class ModelManager:
         try:
             self._pipeline = joblib.load(path)
             self._is_loaded = True
+            self._is_pipeline = hasattr(self._pipeline, "steps")
 
             # Определяем тип модели по последнему шагу pipeline
-            if hasattr(self._pipeline, "steps"):
+            if self._is_pipeline:
                 last_step = self._pipeline.steps[-1]
                 if isinstance(last_step, tuple):
                     self._model_type = type(last_step[1]).__name__
@@ -48,15 +55,55 @@ class ModelManager:
             self._pipeline = None
             self._is_loaded = False
             self._model_type = None
+            self._is_pipeline = False
             return False
+
+    def _build_preprocessor(self):
+        """Строит ColumnTransformer для предобработки сырых данных."""
+        numeric_transformer = StandardScaler()
+        categorical_transformer = OneHotEncoder(
+            drop="first", handle_unknown="ignore"
+        )
+
+        preprocessor = ColumnTransformer(
+            transformers=[
+                ("num", numeric_transformer, NUMERIC_COLS),
+                ("cat", categorical_transformer, CATEGORICAL_COLS),
+            ]
+        )
+        return preprocessor
 
     def predict(self, df: pd.DataFrame):
         """Делает предсказание и возвращает (preds, proba)."""
         if not self._is_loaded or self._pipeline is None:
             raise RuntimeError("Model is not loaded")
 
-        preds = self._pipeline.predict(df)
-        proba = self._pipeline.predict_proba(df)
+        try:
+            if self._is_pipeline:
+                # Пробуем использовать Pipeline как есть
+                preds = self._pipeline.predict(df)
+                proba = self._pipeline.predict_proba(df)
+            else:
+                # Только классификатор — применяем препроцессор вручную
+                preprocessor = self._build_preprocessor()
+                X = preprocessor.fit_transform(df)
+                preds = self._pipeline.predict(X)
+                proba = self._pipeline.predict_proba(X)
+        except ValueError as e:
+            # Если Pipeline не сработал (версионная несовместимость sklearn),
+            # извлекаем классификатор и применяем препроцессор вручную
+            print(f"[WARN] Pipeline failed, using fallback: {e}")
+            if self._is_pipeline:
+                # Извлекаем классификатор из Pipeline
+                classifier = self._pipeline.steps[-1][1]
+            else:
+                classifier = self._pipeline
+
+            preprocessor = self._build_preprocessor()
+            X = preprocessor.fit_transform(df)
+            preds = classifier.predict(X)
+            proba = classifier.predict_proba(X)
+
         return preds, proba
 
     def get_status(self) -> dict:
