@@ -1,83 +1,42 @@
-import pandas as pd
-from typing import Dict, Any
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
+import pandas as pd  # noqa: E402
+import numpy as np  # noqa: E402
+
+from ml.config import CATEGORICAL_COLS, NUMERIC_COLS, TARGET_COL  # noqa: E402
 
 
-def create_dataframe_from_raw(data: Dict[str, Any]) -> pd.DataFrame:
-    """
-    Преобразует сырые 13 полей в DataFrame для pipeline.
-    Pipeline сам сделает one-hot encoding.
-    """
-    # Убеждаемся, что все нужные колонки есть
-    required_cols = [
-        'person_age', 'person_income', 'person_emp_exp', 'person_gender',
-        'person_education', 'person_home_ownership', 'loan_amnt', 'loan_intent',
-        'loan_int_rate', 'loan_percent_income', 'cb_person_cred_hist_length',
-        'credit_score', 'previous_loan_defaults_on_file'
-    ]
+def prepare_features(df: pd.DataFrame) -> pd.DataFrame:
+    """Подготавливает признаки: заполнение пропусков, приведение типов."""
+    df = df.copy()
 
-    # Проверяем наличие всех колонок
-    missing = [col for col in required_cols if col not in data]
-    if missing:
-        raise ValueError(f"Отсутствуют обязательные поля: {', '.join(missing)}")
+    # Заполняем пропуски
+    for col in NUMERIC_COLS:
+        if col in df.columns:
+            df[col] = df[col].fillna(df[col].median())
 
-    # Создаём DataFrame с одной строкой
-    df = pd.DataFrame([data])
+    for col in CATEGORICAL_COLS:
+        if col in df.columns:
+            df[col] = df[col].fillna(df[col].mode()[0] if not df[col].mode().empty else "Unknown")
 
-    # Преобразуем числовые колонки
-    numeric_cols = [
-        'person_age', 'person_income', 'person_emp_exp', 'loan_amnt',
-        'loan_int_rate', 'loan_percent_income', 'cb_person_cred_hist_length',
-        'credit_score'
-    ]
+    # Приводим типы
+    for col in NUMERIC_COLS:
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors="coerce")
 
-    for col in numeric_cols:
-        df[col] = pd.to_numeric(df[col], errors='coerce')
+    for col in CATEGORICAL_COLS:
+        if col in df.columns:
+            df[col] = df[col].astype(str).str.lower().str.strip()
 
     return df
 
 
-def validate_csv_columns(df: pd.DataFrame, require_target: bool = False) -> None:
-    """
-    Проверяет, что CSV содержит все необходимые колонки.
-    """
-    required_cols = [
-        'person_age', 'person_income', 'person_emp_exp', 'person_gender',
-        'person_education', 'person_home_ownership', 'loan_amnt', 'loan_intent',
-        'loan_int_rate', 'loan_percent_income', 'cb_person_cred_hist_length',
-        'credit_score', 'previous_loan_defaults_on_file'
-    ]
-
-    missing = [col for col in required_cols if col not in df.columns]
-    if missing:
-        raise ValueError(
-            f"В CSV отсутствуют обязательные колонки: {', '.join(missing)}"
-        )
-
-    if require_target and 'loan_status' not in df.columns:
-        raise ValueError(
-            "Для расчёта ROC-AUC необходима колонка 'loan_status'"
-        )
-
-
-def calculate_metrics(y_true, y_pred, y_proba):
-    """
-    Рассчитывает метрики качества.
-    """
-    from sklearn.metrics import roc_auc_score, confusion_matrix
-
-    metrics = {}
-
-    # ROC-AUC
-    try:
-        metrics['roc_auc'] = float(roc_auc_score(y_true, y_proba))
-    except Exception:
-        metrics['roc_auc'] = None
-
-    # Confusion Matrix
-    try:
-        cm = confusion_matrix(y_true, y_pred)
-        metrics['confusion_matrix'] = cm.tolist()
-    except Exception:
-        metrics['confusion_matrix'] = None
-
-    return metrics
+def split_features_target(df: pd.DataFrame):
+    """Разделяет датасет на X (признаки) и y (целевая переменная)."""
+    X = df.drop(columns=[TARGET_COL])
+    y = df[TARGET_COL]
+    return X, y
+# end of file

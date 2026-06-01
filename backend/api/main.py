@@ -7,7 +7,7 @@ import shutil
 # Добавляем backend в путь
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from fastapi import FastAPI, File, UploadFile, HTTPException  # noqa: E402
+from fastapi import FastAPI, File, UploadFile, HTTPException, Body  # noqa: E402
 from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
 from fastapi.responses import FileResponse  # noqa: E402
 from fastapi.staticfiles import StaticFiles  # noqa: E402
@@ -82,6 +82,16 @@ async def health_check():
     )
 
 
+@app.get("/model-status")
+async def model_status():
+    """Статус загрузки модели (без лишних полей)"""
+    status = model_manager.get_status()
+    return {
+        "model_loaded": status["loaded"],
+        "model_type": status["model_type"],
+    }
+
+
 @app.post("/upload-model", response_model=ModelUploadResponse)
 async def upload_model(file: UploadFile = File(...)):
     """Загрузка модели (.pkl файл)"""
@@ -120,7 +130,7 @@ async def upload_model(file: UploadFile = File(...)):
 
 
 @app.post("/predict")
-async def predict(data: list[dict]):
+async def predict(data: list = Body(..., description="Список записей с признаками клиента")):
     """
     Принимает одну или несколько записей с признаками клиента.
     Возвращает массив с признаками и loan_status (одобрено / отказ).
