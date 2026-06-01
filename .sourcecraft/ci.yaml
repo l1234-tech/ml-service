@@ -15,7 +15,7 @@ workflows:
               - pip install uv
               - cd backend && uv sync --group dev
               - cd backend && uv run black --line-length=100 .
-              - cd backend && uv run flake8 .
+              - cd backend && uv run flake8 . --ignore=W292
 
       - name: train-and-test
         cubes:

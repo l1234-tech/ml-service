@@ -73,6 +73,13 @@ class ModelManager:
         )
         return preprocessor
 
+    def _extract_classifier(self):
+        """Извлекает классификатор из Pipeline или возвращает как есть."""
+        if self._is_pipeline:
+            steps_dict = dict(self._pipeline.steps)
+            return steps_dict.get("clf", self._pipeline.steps[-1][1])
+        return self._pipeline
+
     def predict(self, df: pd.DataFrame):
         """Делает предсказание и возвращает (preds, proba)."""
         if not self._is_loaded or self._pipeline is None:
@@ -89,16 +96,11 @@ class ModelManager:
                 X = preprocessor.fit_transform(df)
                 preds = self._pipeline.predict(X)
                 proba = self._pipeline.predict_proba(X)
-        except ValueError as e:
+        except (ValueError, AttributeError) as e:
             # Если Pipeline не сработал (версионная несовместимость sklearn),
-            # извлекаем классификатор и применяем препроцессор вручную
+            # извлекаем классификатор и строим новый препроцессор
             print(f"[WARN] Pipeline failed, using fallback: {e}")
-            if self._is_pipeline:
-                # Извлекаем классификатор из Pipeline
-                classifier = self._pipeline.steps[-1][1]
-            else:
-                classifier = self._pipeline
-
+            classifier = self._extract_classifier()
             preprocessor = self._build_preprocessor()
             X = preprocessor.fit_transform(df)
             preds = classifier.predict(X)
