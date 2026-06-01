@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Сервис одобрения ипотеки</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Навигация -->
+        <nav class="nav-bar">
+            <div class="nav-brand">
+                <span class="nav-icon">🏠</span>
+                <span class="nav-title">Ипотечный сервис</span>
+            </div>
+            <div class="nav-status" id="model-status">
+                <span class="status-dot" id="status-dot"></span>
+                <span id="status-text">Модель не загружена</span>
+            </div>
+        </nav>
+
+        <!-- Контейнер страниц -->
+        <main class="main-container">
+            <!-- Страница 1: Выбор модели -->
+            <section class="page active" id="page-model-select">
+                <div class="page-header">
+                    <h1>🏠 Сервис одобрения ипотеки</h1>
+                    <p class="subtitle">Загрузите обученную модель для начала работы</p>
+                </div>
+
+                <div class="card upload-card">
+                    <div class="upload-area" id="upload-area">
+                        <div class="upload-icon">📁</div>
+                        <p class="upload-text">Перетащите .pkl файл сюда или нажмите для выбора</p>
+                        <input type="file" id="model-file" accept=".pkl" hidden>
+                        <button class="btn btn-primary" id="btn-select-file">Выбрать файл</button>
+                    </div>
+                    
+                    <div class="upload-info" id="upload-info" style="display: none;">
+                        <div class="file-info">
+                            <span class="file-icon">📄</span>
+                            <div class="file-details">
+                                <span class="file-name" id="file-name"></span>
+                                <span class="file-size" id="file-size"></span>
+                            </div>
+                        </div>
+                        <button class="btn btn-primary" id="btn-upload">Загрузить модель</button>
+                    </div>
+
+                    <div class="upload-status" id="upload-status" style="display: none;">
+                        <div class="status-message" id="status-message"></div>
+                    </div>
+                </div>
+
+                <div class="card model-info" id="model-info-card" style="display: none;">
+                    <h3>Информация о модели</h3>
+                    <div class="info-row">
+                        <span class="info-label">Тип модели:</span>
+                        <span class="info-value" id="model-type">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Статус:</span>
+                        <span class="info-value status-success">Загружена</span>
+                    </div>
+                    <button class="btn btn-primary btn-next" id="btn-next-to-mode">
+                        Далее
+                        <span class="btn-icon">→</span>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Страница 2: Выбор режима -->
+            <section class="page" id="page-mode-select">
+                <div class="page-header">
+                    <h1>Выберите режим предсказания</h1>
+                    <p class="subtitle">Как вы хотите получить предсказание?</p>
+                </div>
+
+                <div class="mode-cards">
+                    <div class="mode-card" id="mode-single">
+                        <div class="mode-icon">📝</div>
+                        <h3>Одиночное предсказание</h3>
+                        <p>Введите данные одного клиента и получите мгновенный результат</p>
+                        <button class="btn btn-primary">Выбрать</button>
+                    </div>
+
+                    <div class="mode-card" id="mode-csv">
+                        <div class="mode-icon">📁</div>
+                        <h3>Предсказание по файлу</h3>
+                        <p>Загрузите CSV с данными клиентов для batch-обработки</p>
+                        <button class="btn btn-primary">Выбрать</button>
+                    </div>
+                </div>
+
+                <button class="btn btn-secondary btn-back" id="btn-back-to-model">
+                    <span class="btn-icon">←</span>
+                    Назад
+                </button>
+            </section>
+
+            <!-- Страница 3: Одиночное предсказание -->
+            <section class="page" id="page-single-predict">
+                <div class="page-header">
+                    <h1>Одиночное предсказание</h1>
+                    <p class="subtitle">Заполните данные клиента</p>
+                </div>
+
+                <form class="predict-form" id="single-predict-form">
+                    <!-- Секция: Личные данные -->
+                    <div class="form-section">
+                        <h3 class="section-title">👤 Личные данные</h3>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="person_age">Возраст (лет)</label>
+                                <input type="number" id="person_age" name="person_age" min="18" max="100" required placeholder="30">
+                            </div>
+                            <div class="form-group">
+                                <label for="person_income">Доход ($)</label>
+                                <input type="number" id="person_income" name="person_income" min="0" required placeholder="50000">
+                            </div>
+                            <div class="form-group">
+                                <label for="person_emp_exp">Стаж работы (годы)</label>
+                                <input type="number" id="person_emp_exp" name="person_emp_exp" min="0" max="60" required placeholder="5">
+                            </div>
+                            <div class="form-group">
+                                <label for="cb_person_cred_hist_length">Кредитная история (годы)</label>
+                                <input type="number" id="cb_person_cred_hist_length" name="cb_person_cred_hist_length" min="0" required placeholder="5">
+                            </div>
+                            <div class="form-group">
+                                <label for="person_gender">Пол</label>
+                                <select id="person_gender" name="person_gender" required>
+                                    <option value="">Выберите...</option>
+                                    <option value="male">Мужской</option>
+                                    <option value="female">Женский</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Секция: Образование -->
+                    <div class="form-section">
+                        <h3 class="section-title">🎓 Образование</h3>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="person_education">Образование</label>
+                                <select id="person_education" name="person_education" required>
+                                    <option value="">Выберите...</option>
+                                    <option value="High School">High School</option>
+                                    <option value="Associate">Associate</option>
+                                    <option value="Bachelor">Bachelor</option>
+                                    <option value="Master">Master</option>
+                                    <option value="Doctorate">Doctorate</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Секция: Жильё -->
+                    <div class="form-section">
+                        <h3 class="section-title">🏠 Жильё</h3>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="person_home_ownership">Тип жилья</label>
+                                <select id="person_home_ownership" name="person_home_ownership" required>
+                                    <option value="">Выберите...</option>
+                                    <option value="RENT">Аренда (RENT)</option>
+                                    <option value="MORTGAGE">Ипотека (MORTGAGE)</option>
+                                    <option value="OWN">Собственное (OWN)</option>
+                                    <option value="OTHER">Другое (OTHER)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Секция: Кредитные параметры -->
+                    <div class="form-section">
+                        <h3 class="section-title">🏦 Кредитные параметры</h3>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="loan_amnt">Сумма кредита ($)</label>
+                                <input type="number" id="loan_amnt" name="loan_amnt" min="0" required placeholder="150000">
+                            </div>
+                            <div class="form-group">
+                                <label for="loan_int_rate">Процентная ставка (%)</label>
+                                <input type="number" id="loan_int_rate" name="loan_int_rate" min="0" max="100" step="0.01" required placeholder="10.5">
+                            </div>
+                            <div class="form-group">
+                                <label for="loan_percent_income">Процент от дохода (%)</label>
+                                <input type="number" id="loan_percent_income" name="loan_percent_income" min="0" max="1000" step="0.01" required placeholder="300.0">
+                            </div>
+                            <div class="form-group">
+                                <label for="credit_score">Кредитный рейтинг</label>
+                                <input type="number" id="credit_score" name="credit_score" min="300" max="850" required placeholder="700">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Секция: Цель кредита -->
+                    <div class="form-section">
+                        <h3 class="section-title">🎯 Цель кредита</h3>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="loan_intent">Цель кредита</label>
+                                <select id="loan_intent" name="loan_intent" required>
+                                    <option value="">Выберите...</option>
+                                    <option value="PERSONAL">Личные нужды (PERSONAL)</option>
+                                    <option value="EDUCATION">Образование (EDUCATION)</option>
+                                    <option value="MEDICAL">Медицина (MEDICAL)</option>
+                                    <option value="VENTURE">Бизнес (VENTURE)</option>
+                                    <option value="HOMEIMPROVEMENT">Ремонт (HOMEIMPROVEMENT)</option>
+                                    <option value="DEBTCONSOLIDATION">Рефинансирование (DEBTCONSOLIDATION)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Секция: История -->
+                    <div class="form-section">
+                        <h3 class="section-title">📋 История</h3>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="previous_loan_defaults_on_file">Были ли просрочки?</label>
+                                <select id="previous_loan_defaults_on_file" name="previous_loan_defaults_on_file" required>
+                                    <option value="">Выберите...</option>
+                                    <option value="No">Нет</option>
+                                    <option value="Yes">Да</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary btn-large">
+                            <span class="btn-icon">🔮</span>
+                            Получить предсказание
+                        </button>
+                        <button type="button" class="btn btn-secondary" id="btn-back-to-mode-from-single">
+                            <span class="btn-icon">←</span>
+                            Назад
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Результат предсказания -->
+                <div class="prediction-result" id="prediction-result" style="display: none;">
+                    <div class="result-card" id="result-card">
+                        <div class="result-status" id="result-status"></div>
+                        <div class="result-probability">
+                            <span class="probability-label">Вероятность одобрения:</span>
+                            <span class="probability-value" id="probability-value"></span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Страница 4: CSV предсказание -->
+            <section class="page" id="page-csv-predict">
+                <div class="page-header">
+                    <h1>📁 Предсказание по CSV файлу</h1>
+                    <p class="subtitle">Загрузите файл с данными клиентов</p>
+                </div>
+
+                <div class="card upload-card">
+                    <div class="upload-area" id="csv-upload-area">
+                        <div class="upload-icon">📊</div>
+                        <p class="upload-text">Перетащите CSV файл сюда или нажмите для выбора</p>
+                        <input type="file" id="csv-file" accept=".csv" hidden>
+                        <button class="btn btn-primary" id="btn-select-csv">Выбрать CSV</button>
+                    </div>
+                    
+                    <div class="upload-info" id="csv-upload-info" style="display: none;">
+                        <div class="file-info">
+                            <span class="file-icon">📄</span>
+                            <div class="file-details">
+                                <span class="file-name" id="csv-file-name"></span>
+                                <span class="file-size" id="csv-file-size"></span>
+                            </div>
+                        </div>
+                        <div class="form-group checkbox-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="has-target" name="has-target">
+                                <span class="checkmark"></span>
+                                Файл содержит колонку loan_status (для расчёта ROC-AUC)
+                            </label>
+                        </div>
+                        <button class="btn btn-primary" id="btn-process-csv">
+                            <span class="btn-icon">📊</span>
+                            Обработать
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Результаты CSV -->
+                <div class="csv-results" id="csv-results" style="display: none;">
+                    <div class="results-summary card">
+                        <h3>Сводка</h3>
+                        <div class="summary-grid">
+                            <div class="summary-item">
+                                <span class="summary-value" id="total-rows">0</span>
+                                <span class="summary-label">Всего записей</span>
+                            </div>
+                            <div class="summary-item">
+                                <span class="summary-value approved" id="approved-count">0</span>
+                                <span class="summary-label">Одобрено</span>
+                            </div>
+                            <div class="summary-item">
+                                <span class="summary-value rejected" id="rejected-count">0</span>
+                                <span class="summary-label">Отказано</span>
+                            </div>
+                            <div class="summary-item">
+                                <span class="summary-value" id="avg-probability">0%</span>
+                                <span class="summary-label">Средняя вероятность</span>
+                            </div>
+                        </div>
+                        
+                        <div class="roc-auc-display" id="roc-auc-display" style="display: none;">
+                            <div class="roc-auc-value" id="roc-auc-value"></div>
+                            <span class="roc-auc-label">ROC-AUC</span>
+                        </div>
+                    </div>
+
+                    <div class="results-table-container card">
+                        <div class="table-header">
+                            <h3>Результаты</h3>
+                            <button class="btn btn-secondary btn-small" id="btn-download-csv">
+                                <span class="btn-icon">💾</span>
+                                Скачать CSV
+                            </button>
+                        </div>
+                        <div class="table-wrapper">
+                            <table class="results-table" id="results-table">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Возраст</th>
+                                        <th>Доход</th>
+                                        <th>Сумма кредита</th>
+                                        <th>Рейтинг</th>
+                                        <th>Статус</th>
+                                        <th>Вероятность</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="results-tbody">
+                                </tbody>
+                            </table>
+                        </div>
+                        <button class="btn btn-text" id="btn-show-all" style="display: none;">
+                            Показать все записи
+                        </button>
+                    </div>
+                </div>
+
+                <button class="btn btn-secondary btn-back" id="btn-back-to-mode-from-csv">
+                    <span class="btn-icon">←</span>
+                    Назад
+                </button>
+            </section>
+        </main>
+
+        <!-- Уведомления -->
+        <div class="notifications" id="notifications"></div>
+    </div>
+
+    <script src="/js/utils.js"></script>
+    <script src="/js/api.js"></script>
+    <script src="/js/app.js"></script>
+</body>
+</html>
