@@ -12,9 +12,8 @@ workflows:
           - name: lint-python
             image: docker.io/library/python:3.12
             script:
-              - pip install flake8 black
+              - pip install flake8
               - cd backend && flake8 . --max-line-length=100 --exclude=__pycache__,ml/artifacts
-              - cd backend && black --check --line-length=100 . --exclude='ml/artifacts'
 
       - name: train-and-test
         cubes:

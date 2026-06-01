@@ -53,9 +53,10 @@ const mockApi = {
         await delay(1000);
         const probability = Math.random();
         return {
-            prediction: probability > 0.5 ? 1 : 0,
-            probability: probability,
-            status: probability > 0.5 ? 'Approved' : 'Rejected'
+            predictions: [{
+                loan_status: probability > 0.5 ? 'Approved' : 'Rejected',
+                probability: probability
+            }]
         };
     },
     
@@ -66,11 +67,12 @@ const mockApi = {
         const probabilities = Array.from({length: count}, () => Math.random());
         
         return {
-            predictions,
-            probabilities,
-            rows_processed: count,
+            predictions: predictions.map((pred, i) => ({
+                predicted_loan_status: pred === 1 ? 'Approved' : 'Rejected',
+                probability: probabilities[i]
+            })),
+            total_rows: count,
             roc_auc: hasTarget ? 0.85 + Math.random() * 0.1 : null,
-            confusion_matrix: hasTarget ? [[45, 5], [3, 47]] : null,
             approved_count: predictions.filter(p => p === 1).length,
             rejected_count: predictions.filter(p => p === 0).length,
             avg_probability: probabilities.reduce((a, b) => a + b, 0) / count
@@ -111,9 +113,8 @@ const realApi = {
     async predictCsv(file, hasTarget) {
         const formData = new FormData();
         formData.append('file', file);
-        formData.append('has_target', hasTarget.toString());
         
-        const response = await fetch(`${API_BASE}/predict-csv`, {
+        const response = await fetch(`${API_BASE}/predict-from-csv`, {
             method: 'POST',
             body: formData,
         });
@@ -123,7 +124,28 @@ const realApi = {
             throw new Error(error.detail || 'Ошибка обработки CSV');
         }
         
-        return await response.json();
+        const result = await response.json();
+        
+        // Преобразуем ответ бэкенда в формат, ожидаемый фронтендом
+        const predictions = result.predictions || [];
+        const approvedCount = predictions.filter(p => p.predicted_loan_status === 'Approved').length;
+        const rejectedCount = predictions.filter(p => p.predicted_loan_status === 'Rejected').length;
+        const avgProb = predictions.length > 0
+            ? predictions.reduce((sum, p) => sum + (p.probability || 0), 0) / predictions.length
+            : 0;
+        
+        return {
+            predictions: predictions.map(p => ({
+                predicted_loan_status: p.predicted_loan_status,
+                probability: p.probability
+            })),
+            total_rows: result.total_rows || predictions.length,
+            rows_processed: result.total_rows || predictions.length,
+            roc_auc: result.roc_auc || null,
+            approved_count: approvedCount,
+            rejected_count: rejectedCount,
+            avg_probability: avgProb
+        };
     }
 };
 
