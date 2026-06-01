@@ -19,7 +19,7 @@ workflows:
           - name: train-model
             image: docker.io/library/python:3.12
             script:
-              - pip install uv && cd backend && uv sync && mkdir -p ml/artifacts && uv run python ml/train.py
+              - pip install uv && cd backend && uv sync && uv run python ml/train.py
             artifacts:
               paths:
                 - backend/ml/artifacts/

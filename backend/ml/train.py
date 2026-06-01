@@ -9,12 +9,17 @@ from sklearn.model_selection import train_test_split  # noqa: E402
 from ml.config import (  # noqa: E402
     DATA_PATH,
     ARTIFACTS_DIR,
+    ALL_MODELS_DIR,
     PIPELINE_PATH,
     METRICS_PATH,
     SAMPLE_PAYLOAD_PATH,
     ROC_CURVES_PATH,
     SAMPLE_CSV_PATH,
     SAMPLE_CSV_WITH_TARGET_PATH,
+    LOGISTIC_REGRESSION_PATH,
+    RANDOM_FOREST_PATH,
+    GRADIENT_BOOSTING_PATH,
+    XGBOOST_PATH,
     TARGET_COL,
     RANDOM_STATE,
     TEST_SIZE,
@@ -31,6 +36,7 @@ def main():
     print("=" * 60)
 
     ARTIFACTS_DIR.mkdir(parents=True, exist_ok=True)
+    ALL_MODELS_DIR.mkdir(parents=True, exist_ok=True)
 
     print(f"\n1. Loading data from {DATA_PATH}")
     df = pd.read_csv(DATA_PATH)
@@ -63,11 +69,22 @@ def main():
     print("\n6. Training models")
     models = get_models()
     results = {}
+    model_paths = {
+        "LogisticRegression": LOGISTIC_REGRESSION_PATH,
+        "RandomForestClassifier": RANDOM_FOREST_PATH,
+        "GradientBoostingClassifier": GRADIENT_BOOSTING_PATH,
+        "XGBClassifier": XGBOOST_PATH,
+    }
     for name, pipeline in models.items():
         print(f"   Training {name}...")
         pipeline.fit(X_train, y_train)
         results[name] = evaluate_model(pipeline, X_test, y_test)
         print(f"   {name} ROC-AUC: {results[name]['auc']:.4f}")
+
+        # Сохраняем каждую модель в артефакты
+        if name in model_paths:
+            save_object(pipeline, model_paths[name])
+            print(f"   {name} saved to {model_paths[name]}")
 
     print("\n7. Model comparison")
     best_name = max(results, key=lambda k: results[k]["auc"])
@@ -82,7 +99,7 @@ def main():
 
     print("\n8. Saving artifacts")
     save_object(best_pipeline, PIPELINE_PATH)
-    print(f"   Pipeline saved to {PIPELINE_PATH}")
+    print(f"   Best pipeline saved to {PIPELINE_PATH}")
 
     metrics_report = {
         name: {
