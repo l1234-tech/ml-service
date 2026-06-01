@@ -4,46 +4,27 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import pandas as pd
+from ml.utils import load_object
 from ml.config import PIPELINE_PATH, SAMPLE_PAYLOAD_PATH
-from ml.utils import load_object, load_json
 
 
-def main():
-    print("=" * 60)
-    print("Pipeline Load Test")
-    print("=" * 60)
+def test_load_pipeline():
+    pipeline = load_object(PIPELINE_PATH)
+    assert pipeline is not None
+    print("Pipeline loaded successfully!")
 
-    try:
-        print(f"\n1. Loading pipeline from {PIPELINE_PATH}")
-        pipeline = load_object(PIPELINE_PATH)
-        print("   Pipeline loaded successfully!")
 
-        print(f"\n2. Loading sample payload from {SAMPLE_PAYLOAD_PATH}")
-        sample_data = load_json(SAMPLE_PAYLOAD_PATH)
-        df_sample = pd.DataFrame(sample_data)
-        print(f"   Sample shape: {df_sample.shape}")
-        print("   Sample data:")
-        print(df_sample)
-
-        print("\n3. Making predictions")
-        predictions = pipeline.predict(df_sample)
-        probabilities = pipeline.predict_proba(df_sample)
-
-        print(f"   Predictions: {predictions}")
-        print(f"   Probabilities (class 1): {probabilities[:, 1]}")
-
-        print("\n" + "=" * 60)
-        print("Test passed successfully!")
-        print("=" * 60)
-
-    except FileNotFoundError as e:
-        print(f"\n   ERROR: File not found - {e}")
-        print("   Make sure you have run train.py first!")
-        sys.exit(1)
-    except Exception as e:
-        print(f"\n   ERROR: {type(e).__name__}: {e}")
-        sys.exit(1)
+def test_predict_sample():
+    pipeline = load_object(PIPELINE_PATH)
+    sample = pd.read_json(SAMPLE_PAYLOAD_PATH)
+    preds = pipeline.predict(sample)
+    proba = pipeline.predict_proba(sample)
+    assert len(preds) == len(sample)
+    assert proba.shape[0] == len(sample)
+    print(f"Predictions: {preds}")
+    print(f"Probabilities: {proba[:, 1]}")
 
 
 if __name__ == "__main__":
-    main()
+    test_load_pipeline()
+    test_predict_sample()

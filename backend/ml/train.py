@@ -114,7 +114,7 @@ def main():
         test_sample = pd.DataFrame(sample_data)
         test_pred = loaded_pipeline.predict(test_sample)
         test_proba = loaded_pipeline.predict_proba(test_sample)
-        print(f"   Loaded pipeline test passed!")
+        print("   Loaded pipeline test passed!")
         print(f"   Predictions: {test_pred}")
         print(f"   Probabilities: {test_proba[:, 1]}")
     except Exception as e:
