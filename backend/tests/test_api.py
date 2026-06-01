@@ -67,4 +67,3 @@ def test_predict_from_csv_invalid_extension():
     assert response.status_code == 400
     data = response.json()
     assert "detail" in data
-# end of file

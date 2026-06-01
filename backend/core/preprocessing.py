@@ -38,4 +38,3 @@ def split_features_target(df: pd.DataFrame):
     X = df.drop(columns=[TARGET_COL])
     y = df[TARGET_COL]
     return X, y
-# end of file

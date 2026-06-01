@@ -83,4 +83,3 @@ def plot_roc_curves(results, save_path):
     plt.grid(True)
     plt.savefig(save_path)
     plt.close()
-# end of file

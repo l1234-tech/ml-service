@@ -28,4 +28,3 @@ def test_predict_sample():
 if __name__ == "__main__":
     test_load_pipeline()
     test_predict_sample()
-# end of file

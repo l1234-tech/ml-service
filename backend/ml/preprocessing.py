@@ -18,4 +18,3 @@ def apply_iqr_capping(df: pd.DataFrame, columns: list) -> pd.DataFrame:
             upper = Q3 + 1.5 * IQR
             df[col] = df[col].clip(lower=lower, upper=upper)
     return df
-# end of file
