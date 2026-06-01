@@ -83,11 +83,10 @@ function setupEventListeners() {
     const btnSelectFile = document.getElementById('btn-select-file');
     
     btnSelectFile.addEventListener('click', (e) => {
-        e.stopPropagation(); // предотвращаем всплытие к uploadArea
+        e.stopPropagation();
         fileInput.click();
     });
     uploadArea.addEventListener('click', (e) => {
-        // Открываем диалог только если клик не по кнопке
         if (e.target === uploadArea || e.target.closest('.upload-icon, .upload-text')) {
             fileInput.click();
         }
@@ -157,7 +156,7 @@ function setupEventListeners() {
     const btnSelectCsv = document.getElementById('btn-select-csv');
     
     btnSelectCsv.addEventListener('click', (e) => {
-        e.stopPropagation(); // предотвращаем всплытие к csvUploadArea
+        e.stopPropagation();
         csvFileInput.click();
     });
     csvUploadArea.addEventListener('click', (e) => {

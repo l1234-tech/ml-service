@@ -54,9 +54,7 @@ if FRONTEND_DIR.exists():
     app.mount(
         "/static", StaticFiles(directory=str(FRONTEND_DIR / "css")), name="css"
     )
-    app.mount(
-        "/js", StaticFiles(directory=str(FRONTEND_DIR / "js")), name="js"
-    )
+    app.mount("/js", StaticFiles(directory=str(FRONTEND_DIR / "js")), name="js")
     print(f"[OK] Frontend static files mounted from: {FRONTEND_DIR}")
 else:
     print(f"[WARNING] Frontend directory not found at: {FRONTEND_DIR}")
