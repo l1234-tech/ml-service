@@ -116,3 +116,4 @@ class ModelManager:
 
 # Глобальный экземпляр менеджера модели
 model_manager = ModelManager()
+# end of file
