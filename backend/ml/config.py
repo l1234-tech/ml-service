@@ -20,7 +20,6 @@ ALL_MODELS_DIR = ARTIFACTS_DIR / "models"
 LOGISTIC_REGRESSION_PATH = ALL_MODELS_DIR / "logistic_regression.pkl"
 RANDOM_FOREST_PATH = ALL_MODELS_DIR / "random_forest.pkl"
 GRADIENT_BOOSTING_PATH = ALL_MODELS_DIR / "gradient_boosting.pkl"
-XGBOOST_PATH = ALL_MODELS_DIR / "xgboost.pkl"
 
 CATEGORICAL_COLS = [
     "person_gender",

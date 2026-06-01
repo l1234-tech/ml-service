@@ -19,7 +19,6 @@ from ml.config import (  # noqa: E402
     LOGISTIC_REGRESSION_PATH,
     RANDOM_FOREST_PATH,
     GRADIENT_BOOSTING_PATH,
-    XGBOOST_PATH,
     TARGET_COL,
     RANDOM_STATE,
     TEST_SIZE,
@@ -71,9 +70,8 @@ def main():
     results = {}
     model_paths = {
         "LogisticRegression": LOGISTIC_REGRESSION_PATH,
-        "RandomForestClassifier": RANDOM_FOREST_PATH,
-        "GradientBoostingClassifier": GRADIENT_BOOSTING_PATH,
-        "XGBClassifier": XGBOOST_PATH,
+        "RandomForest": RANDOM_FOREST_PATH,
+        "GradientBoosting": GRADIENT_BOOSTING_PATH,
     }
     for name, pipeline in models.items():
         print(f"   Training {name}...")
