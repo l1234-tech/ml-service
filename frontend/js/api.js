@@ -55,7 +55,7 @@ const mockApi = {
         return {
             predictions: [{
                 loan_status: probability > 0.5 ? 'Approved' : 'Rejected',
-                probability: probability
+                probability: Math.round(probability * 10000) / 10000
             }]
         };
     },
@@ -69,9 +69,10 @@ const mockApi = {
         return {
             predictions: predictions.map((pred, i) => ({
                 predicted_loan_status: pred === 1 ? 'Approved' : 'Rejected',
-                probability: probabilities[i]
+                probability: Math.round(probabilities[i] * 10000) / 10000
             })),
             total_rows: count,
+            rows_processed: count,
             roc_auc: hasTarget ? 0.85 + Math.random() * 0.1 : null,
             approved_count: predictions.filter(p => p === 1).length,
             rejected_count: predictions.filter(p => p === 0).length,

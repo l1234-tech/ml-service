@@ -1,23 +1,20 @@
 import os
-import sys
-from pathlib import Path
-import tempfile
 import shutil
+import sys
+import tempfile
+from pathlib import Path
 
 # Добавляем backend в путь
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from fastapi import FastAPI, File, UploadFile, HTTPException, Body  # noqa: E402
-from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
-from fastapi.responses import FileResponse  # noqa: E402
-from fastapi.staticfiles import StaticFiles  # noqa: E402
-import pandas as pd  # noqa: E402
-import numpy as np  # noqa: E402
+import numpy as np
+import pandas as pd
+from fastapi import Body, FastAPI, File, HTTPException, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
-from api.schemas import (  # noqa: E402
-    HealthResponse,
-    ModelUploadResponse,
-)
+from api.schemas import HealthResponse, ModelUploadResponse  # noqa: E402
 from core.model import model_manager  # noqa: E402
 from ml.config import PIPELINE_PATH  # noqa: E402
 
@@ -39,7 +36,7 @@ else:
 app = FastAPI(
     title="ML Сервис одобрения ипотеки",
     description="API для предсказания одобрения ипотечных заявок",
-    version="1.0.0"
+    version="1.0.0",
 )
 
 # CORS для фронтенда
@@ -54,8 +51,12 @@ app.add_middleware(
 # Настройка статических файлов фронтенда
 FRONTEND_DIR = Path(__file__).parent.parent.parent / "frontend"
 if FRONTEND_DIR.exists():
-    app.mount("/static", StaticFiles(directory=str(FRONTEND_DIR / "css")), name="css")
-    app.mount("/js", StaticFiles(directory=str(FRONTEND_DIR / "js")), name="js")
+    app.mount(
+        "/static", StaticFiles(directory=str(FRONTEND_DIR / "css")), name="css"
+    )
+    app.mount(
+        "/js", StaticFiles(directory=str(FRONTEND_DIR / "js")), name="js"
+    )
     print(f"[OK] Frontend static files mounted from: {FRONTEND_DIR}")
 else:
     print(f"[WARNING] Frontend directory not found at: {FRONTEND_DIR}")
@@ -78,7 +79,7 @@ async def health_check():
         status="ok",
         model_loaded=status["loaded"],
         model_type=status["model_type"],
-        version="1.0.0"
+        version="1.0.0",
     )
 
 
@@ -95,10 +96,9 @@ async def model_status():
 @app.post("/upload-model", response_model=ModelUploadResponse)
 async def upload_model(file: UploadFile = File(...)):
     """Загрузка модели (.pkl файл)"""
-    if not file.filename.endswith('.pkl'):
+    if not file.filename.endswith(".pkl"):
         raise HTTPException(
-            status_code=400,
-            detail="Файл должен иметь расширение .pkl"
+            status_code=400, detail="Файл должен иметь расширение .pkl"
         )
 
     # Сохраняем временный файл
@@ -116,12 +116,12 @@ async def upload_model(file: UploadFile = File(...)):
             return ModelUploadResponse(
                 success=True,
                 message="Модель успешно загружена",
-                model_type=model_manager.model_type
+                model_type=model_manager.model_type,
             )
         else:
             raise HTTPException(
                 status_code=400,
-                detail="Не удалось загрузить модель. Проверьте файл."
+                detail="Не удалось загрузить модель. Проверьте файл.",
             )
 
     finally:
@@ -130,7 +130,9 @@ async def upload_model(file: UploadFile = File(...)):
 
 
 @app.post("/predict")
-async def predict(data: list = Body(..., description="Список записей с признаками клиента")):
+async def predict(
+    data: list = Body(..., description="Список записей с признаками клиента"),
+):
     """
     Принимает одну или несколько записей с признаками клиента.
     Возвращает массив с признаками и loan_status (одобрено / отказ).
@@ -140,8 +142,8 @@ async def predict(data: list = Body(..., description="Список записе�
             status_code=400,
             detail={
                 "status": "error",
-                "message": "Модель не загружена. Сначала загрузите модель через /upload-model"
-            }
+                "message": "Модель не загружена. Сначала загрузите модель через /upload-model",
+            },
         )
 
     try:
@@ -153,7 +155,9 @@ async def predict(data: list = Body(..., description="Список записе�
         results = []
         for i in range(len(df)):
             row = df.iloc[i].to_dict()
-            row["loan_status"] = "Approved" if int(predictions[i]) == 1 else "Rejected"
+            row["loan_status"] = (
+                "Approved" if int(predictions[i]) == 1 else "Rejected"
+            )
             row["probability"] = round(float(probabilities[i][1]), 4)
             results.append(row)
 
@@ -166,8 +170,8 @@ async def predict(data: list = Body(..., description="Список записе�
             status_code=400,
             detail={
                 "status": "error",
-                "message": f"Ошибка предсказания: {str(e)}"
-            }
+                "message": f"Ошибка предсказания: {str(e)}",
+            },
         )
 
 
@@ -182,8 +186,8 @@ async def predict_from_csv(file: UploadFile = None):
             status_code=400,
             detail={
                 "status": "error",
-                "message": "Файл не передан. Загрузите CSV-файл."
-            }
+                "message": "Файл не передан. Загрузите CSV-файл.",
+            },
         )
 
     if not model_manager.is_loaded:
@@ -191,17 +195,17 @@ async def predict_from_csv(file: UploadFile = None):
             status_code=400,
             detail={
                 "status": "error",
-                "message": "Модель не загружена. Сначала загрузите модель через /upload-model"
-            }
+                "message": "Модель не загружена. Сначала загрузите модель через /upload-model",
+            },
         )
 
-    if not file.filename.endswith('.csv'):
+    if not file.filename.endswith(".csv"):
         raise HTTPException(
             status_code=400,
             detail={
                 "status": "error",
-                "message": "Файл должен быть в формате .csv"
-            }
+                "message": "Файл должен быть в формате .csv",
+            },
         )
 
     try:
@@ -218,12 +222,15 @@ async def predict_from_csv(file: UploadFile = None):
         roc_auc = None
         if has_target and len(np.unique(y_true)) > 1:
             from sklearn.metrics import roc_auc_score
+
             roc_auc = round(float(roc_auc_score(y_true, probabilities[:, 1])), 4)
 
         results = []
         for i in range(len(df)):
             row = df.iloc[i].to_dict()
-            row["predicted_loan_status"] = "Approved" if int(predictions[i]) == 1 else "Rejected"
+            row["predicted_loan_status"] = (
+                "Approved" if int(predictions[i]) == 1 else "Rejected"
+            )
             row["probability"] = round(float(probabilities[i][1]), 4)
             results.append(row)
 
@@ -243,14 +250,15 @@ async def predict_from_csv(file: UploadFile = None):
             status_code=400,
             detail={
                 "status": "error",
-                "message": f"Ошибка обработки CSV: {str(e)}"
-            }
+                "message": f"Ошибка обработки CSV: {str(e)}",
+            },
         )
 
 
 def run():
     """Функция для запуска через скрипт"""
     import uvicorn
+
     uvicorn.run("backend.api.main:app", host="0.0.0.0", port=8000, reload=True)
 
 

@@ -82,8 +82,16 @@ function setupEventListeners() {
     const fileInput = document.getElementById('model-file');
     const btnSelectFile = document.getElementById('btn-select-file');
     
-    btnSelectFile.addEventListener('click', () => fileInput.click());
-    uploadArea.addEventListener('click', () => fileInput.click());
+    btnSelectFile.addEventListener('click', (e) => {
+        e.stopPropagation(); // предотвращаем всплытие к uploadArea
+        fileInput.click();
+    });
+    uploadArea.addEventListener('click', (e) => {
+        // Открываем диалог только если клик не по кнопке
+        if (e.target === uploadArea || e.target.closest('.upload-icon, .upload-text')) {
+            fileInput.click();
+        }
+    });
     
     // Drag & Drop
     uploadArea.addEventListener('dragover', (e) => {
@@ -148,8 +156,15 @@ function setupEventListeners() {
     const csvFileInput = document.getElementById('csv-file');
     const btnSelectCsv = document.getElementById('btn-select-csv');
     
-    btnSelectCsv.addEventListener('click', () => csvFileInput.click());
-    csvUploadArea.addEventListener('click', () => csvFileInput.click());
+    btnSelectCsv.addEventListener('click', (e) => {
+        e.stopPropagation(); // предотвращаем всплытие к csvUploadArea
+        csvFileInput.click();
+    });
+    csvUploadArea.addEventListener('click', (e) => {
+        if (e.target === csvUploadArea || e.target.closest('.upload-icon, .upload-text')) {
+            csvFileInput.click();
+        }
+    });
     
     csvUploadArea.addEventListener('dragover', (e) => {
         e.preventDefault();
@@ -256,7 +271,8 @@ async function handleSinglePredict(e) {
     setButtonLoading(e.submitter, true);
     
     try {
-        const result = await api.predict(data);
+        // Оборачиваем данные в массив, так как бэкенд ожидает список записей
+        const result = await api.predict([data]);
         showPredictionResult(result);
     } catch (e) {
         console.error('Ошибка предсказания:', e);
@@ -271,12 +287,19 @@ function showPredictionResult(result) {
     const probEl = document.getElementById('probability-value');
     const cardEl = document.getElementById('result-card');
     
-    const isApproved = result.prediction === 1;
+    // Бэкенд возвращает { predictions: [...] }
+    const prediction = result.predictions && result.predictions[0];
+    if (!prediction) {
+        showError('Неожиданный формат ответа от сервера');
+        return;
+    }
+    
+    const isApproved = prediction.loan_status === 'Approved';
     
     statusEl.textContent = isApproved ? '✅ Approved' : '❌ Rejected';
     statusEl.className = `result-status ${isApproved ? 'approved' : 'rejected'}`;
     
-    probEl.textContent = formatPercent(result.probability);
+    probEl.textContent = formatPercent(prediction.probability);
     
     cardEl.style.borderColor = isApproved ? 'var(--success-color)' : 'var(--danger-color)';
     
@@ -364,10 +387,12 @@ function renderResultsTable(result, limit) {
     const tbody = document.getElementById('results-tbody');
     tbody.innerHTML = '';
     
-    const count = Math.min(result.predictions.length, limit);
+    const predictions = result.predictions || [];
+    const count = Math.min(predictions.length, limit);
     
     for (let i = 0; i < count; i++) {
         const tr = document.createElement('tr');
+        const pred = predictions[i];
         
         // Номер
         const tdNum = document.createElement('td');
@@ -393,7 +418,7 @@ function renderResultsTable(result, limit) {
         
         // Статус
         const tdStatus = document.createElement('td');
-        const isApproved = result.predictions[i] === 1;
+        const isApproved = pred.predicted_loan_status === 'Approved';
         tdStatus.innerHTML = `<span class="status-badge ${isApproved ? 'approved' : 'rejected'}">
             ${isApproved ? 'Одобрено' : 'Отказано'}
         </span>`;
@@ -401,7 +426,7 @@ function renderResultsTable(result, limit) {
         
         // Вероятность
         const tdProb = document.createElement('td');
-        tdProb.textContent = formatPercent(result.probabilities[i]);
+        tdProb.textContent = formatPercent(pred.probability || 0);
         tr.appendChild(tdProb);
         
         tbody.appendChild(tr);
@@ -418,10 +443,11 @@ function showAllResults() {
 function downloadResults() {
     if (!state.csvResults) return;
     
-    const data = state.csvResults.predictions.map((pred, i) => ({
+    const predictions = state.csvResults.predictions || [];
+    const data = predictions.map((pred, i) => ({
         '№': i + 1,
-        'Prediction': pred === 1 ? 'Approved' : 'Rejected',
-        'Probability': state.csvResults.probabilities[i].toFixed(4)
+        'Prediction': pred.predicted_loan_status,
+        'Probability': (pred.probability || 0).toFixed(4)
     }));
     
     downloadCSV(data, 'predictions.csv');
