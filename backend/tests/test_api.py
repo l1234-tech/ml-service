@@ -1,39 +1,18 @@
-import sys
-from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
-from fastapi.testclient import TestClient  # noqa: E402
-from api.main import app  # noqa: E402
+from fastapi.testclient import TestClient
+from main import app
 
 client = TestClient(app)
 
-SAMPLE_RECORD = {
-    "person_age": 30,
-    "person_income": 50000,
-    "person_emp_exp": 5,
-    "person_gender": "male",
-    "person_education": "Bachelor",
-    "person_home_ownership": "RENT",
-    "loan_amnt": 100000,
-    "loan_intent": "EDUCATION",
-    "loan_int_rate": 10.5,
-    "loan_percent_income": 20,
-    "cb_person_cred_hist_length": 5,
-    "credit_score": 700,
-    "previous_loan_defaults_on_file": "No",
-}
 
-
-def test_health_without_model():
-    response = client.get("/health")
+def test_model_status_without_model():
+    response = client.get("/model-status")
     assert response.status_code == 200
     data = response.json()
     assert data["model_loaded"] is False
 
 
 def test_predict_without_model():
-    response = client.post("/predict", json=[SAMPLE_RECORD])
+    response = client.post("/predict", json=[{"person_age": 30}])
     assert response.status_code == 400
     data = response.json()
     assert "detail" in data
