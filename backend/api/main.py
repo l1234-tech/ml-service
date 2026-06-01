@@ -205,10 +205,12 @@ async def upload_model(file: UploadFile = File(...)):
         success = model_manager.load_model(str(PIPELINE_PATH))
 
         if success:
+            # Используем имя файла пользователя как название модели
+            user_model_name = file.filename.replace(".pkl", "")
             return ModelUploadResponse(
                 success=True,
                 message="Модель успешно загружена",
-                model_type=model_manager.model_type,
+                model_type=user_model_name,
             )
         else:
             # Если не удалось загрузить — удаляем файл
@@ -329,7 +331,7 @@ async def predict_from_csv(file: UploadFile = None):
         # Делаем предсказания через pipeline
         predictions, probabilities = model_manager.predict(X)
 
-        # Вычисляем ROC-AUC если есть целевая переменная
+        # Вычисляем ROC-AUC если есть ��елевая переменная
         roc_auc = None
         if has_target and len(np.unique(y_true)) > 1:
             from sklearn.metrics import roc_auc_score

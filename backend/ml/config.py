@@ -15,6 +15,12 @@ ROC_CURVES_PATH = ARTIFACTS_DIR / "roc_curves.png"
 SAMPLE_CSV_PATH = ARTIFACTS_DIR / "sample_data.csv"
 SAMPLE_CSV_WITH_TARGET_PATH = ARTIFACTS_DIR / "sample_data_with_target.csv"
 
+# Пути для всех обученных моделей
+ALL_MODELS_DIR = ARTIFACTS_DIR / "models"
+LOGISTIC_REGRESSION_PATH = ALL_MODELS_DIR / "logistic_regression.pkl"
+RANDOM_FOREST_PATH = ALL_MODELS_DIR / "random_forest.pkl"
+GRADIENT_BOOSTING_PATH = ALL_MODELS_DIR / "gradient_boosting.pkl"
+
 CATEGORICAL_COLS = [
     "person_gender",
     "person_education",
