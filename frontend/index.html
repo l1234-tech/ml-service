@@ -26,7 +26,7 @@
             <section class="page active" id="page-model-select">
                 <div class="page-header">
                     <h1>🏠 Сервис одобрения ипотеки</h1>
-                    <p class="subtitle">Загрузите обученную модель для начала работы</p>
+                    <p class="subtitle">Загрузите свою модель или используйте предустановленную</p>
                 </div>
 
                 <div class="card upload-card">
@@ -50,6 +50,18 @@
 
                     <div class="upload-status" id="upload-status" style="display: none;">
                         <div class="status-message" id="status-message"></div>
+                    </div>
+
+                    <div class="divider">
+                        <span class="divider-text">или</span>
+                    </div>
+
+                    <div class="default-model-section">
+                        <button class="btn btn-secondary btn-large" id="btn-use-default">
+                            <span class="btn-icon">⚙️</span>
+                            Использовать предустановленную модель
+                        </button>
+                        <p class="help-text">Будет использована уже обученная модель RandomForestClassifier</p>
                     </div>
                 </div>
 
@@ -152,11 +164,11 @@
                                 <label for="person_education">Образование</label>
                                 <select id="person_education" name="person_education" required>
                                     <option value="">Выберите...</option>
-                                    <option value="High School">High School</option>
-                                    <option value="Associate">Associate</option>
-                                    <option value="Bachelor">Bachelor</option>
-                                    <option value="Master">Master</option>
-                                    <option value="Doctorate">Doctorate</option>
+                                    <option value="High School">Среднее</option>
+                                    <option value="Associate">Среднее специальное</option>
+                                    <option value="Bachelor">Бакалавр</option>
+                                    <option value="Master">Магистр</option>
+                                    <option value="Doctorate">Доктор наук</option>
                                 </select>
                             </div>
                         </div>
@@ -170,10 +182,10 @@
                                 <label for="person_home_ownership">Тип жилья</label>
                                 <select id="person_home_ownership" name="person_home_ownership" required>
                                     <option value="">Выберите...</option>
-                                    <option value="RENT">Аренда (RENT)</option>
-                                    <option value="MORTGAGE">Ипотека (MORTGAGE)</option>
-                                    <option value="OWN">Собственное (OWN)</option>
-                                    <option value="OTHER">Другое (OTHER)</option>
+                                    <option value="RENT">Аренда</option>
+                                    <option value="MORTGAGE">Ипотека</option>
+                                    <option value="OWN">Собственное</option>
+                                    <option value="OTHER">Другое</option>
                                 </select>
                             </div>
                         </div>
@@ -210,12 +222,12 @@
                                 <label for="loan_intent">Цель кредита</label>
                                 <select id="loan_intent" name="loan_intent" required>
                                     <option value="">Выберите...</option>
-                                    <option value="PERSONAL">Личные нужды (PERSONAL)</option>
-                                    <option value="EDUCATION">Образование (EDUCATION)</option>
-                                    <option value="MEDICAL">Медицина (MEDICAL)</option>
-                                    <option value="VENTURE">Бизнес (VENTURE)</option>
-                                    <option value="HOMEIMPROVEMENT">Ремонт (HOMEIMPROVEMENT)</option>
-                                    <option value="DEBTCONSOLIDATION">Рефинансирование (DEBTCONSOLIDATION)</option>
+                                    <option value="PERSONAL">Личные нужды</option>
+                                    <option value="EDUCATION">Образование</option>
+                                    <option value="MEDICAL">Медицина</option>
+                                    <option value="VENTURE">Бизнес</option>
+                                    <option value="HOMEIMPROVEMENT">Ремонт</option>
+                                    <option value="DEBTCONSOLIDATION">Рефинансирование</option>
                                 </select>
                             </div>
                         </div>
@@ -267,7 +279,7 @@
                     <p class="subtitle">Загрузите файл с данными клиентов</p>
                 </div>
 
-                <div class="card upload-card">
+                <div class="card upload-card" id="csv-upload-card">
                     <div class="upload-area" id="csv-upload-area">
                         <div class="upload-icon">📊</div>
                         <p class="upload-text">Перетащите CSV файл сюда или нажмите для выбора</p>
@@ -333,26 +345,23 @@
                     <div class="results-table-container card">
                         <div class="table-header">
                             <h3>Результаты</h3>
-                            <button class="btn btn-secondary btn-small" id="btn-download-csv">
-                                <span class="btn-icon">💾</span>
-                                Скачать CSV
-                            </button>
+                            <div class="table-actions">
+                                <button class="btn btn-secondary btn-small" id="btn-change-csv">
+                                    <span class="btn-icon">📁</span>
+                                    Загрузить другой файл
+                                </button>
+                                <button class="btn btn-secondary btn-small" id="btn-download-csv">
+                                    <span class="btn-icon">💾</span>
+                                    Скачать CSV
+                                </button>
+                            </div>
                         </div>
                         <div class="table-wrapper">
                             <table class="results-table" id="results-table">
                                 <thead>
-                                    <tr>
-                                        <th>#</th>
-                                        <th>Возраст</th>
-                                        <th>Доход</th>
-                                        <th>Сумма кредита</th>
-                                        <th>Рейтинг</th>
-                                        <th>Статус</th>
-                                        <th>Вероятность</th>
-                                    </tr>
+                                    <tr id="results-thead"></tr>
                                 </thead>
-                                <tbody id="results-tbody">
-                                </tbody>
+                                <tbody id="results-tbody"></tbody>
                             </table>
                         </div>
                         <button class="btn btn-text" id="btn-show-all" style="display: none;">

@@ -12,6 +12,8 @@ PIPELINE_PATH = ARTIFACTS_DIR / "pipeline.pkl"
 METRICS_PATH = ARTIFACTS_DIR / "metrics_report.json"
 SAMPLE_PAYLOAD_PATH = ARTIFACTS_DIR / "sample_payload.json"
 ROC_CURVES_PATH = ARTIFACTS_DIR / "roc_curves.png"
+SAMPLE_CSV_PATH = ARTIFACTS_DIR / "sample_data.csv"
+SAMPLE_CSV_WITH_TARGET_PATH = ARTIFACTS_DIR / "sample_data_with_target.csv"
 
 CATEGORICAL_COLS = [
     "person_gender",

@@ -24,6 +24,7 @@ workflows:
             script:
               - pip install uv
               - cd backend && uv sync
+              - cd backend && mkdir -p ml/artifacts
               - cd backend && uv run python ml/train.py
             artifacts:
               paths:

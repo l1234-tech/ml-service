@@ -20,9 +20,9 @@ const pages = {
 };
 
 // Инициализация
-function init() {
+async function init() {
     setupEventListeners();
-    checkModelStatus();
+    await checkModelStatus();
     navigate('model-select');
 }
 
@@ -50,6 +50,12 @@ async function checkModelStatus() {
         state.modelLoaded = status.model_loaded;
         state.modelType = status.model_type;
         updateModelStatusUI();
+        
+        // Если модель уже авто-загружена — показываем карточку с информацией
+        if (status.model_loaded) {
+            document.getElementById('model-type').textContent = status.model_type || 'Неизвестно';
+            toggleElement('model-info-card', true);
+        }
     } catch (e) {
         console.error('Ошибка проверки статуса:', e);
     }
@@ -116,6 +122,9 @@ function setupEventListeners() {
         navigate('mode-select');
     });
     
+    // Кнопка "Использовать предустановленную модель"
+    document.getElementById('btn-use-default').addEventListener('click', useDefaultModel);
+    
     // === Страница 2: Выбор режима ===
     document.getElementById('mode-single').addEventListener('click', () => {
         navigate('single-predict');
@@ -177,6 +186,7 @@ function setupEventListeners() {
     });
     
     document.getElementById('btn-process-csv').addEventListener('click', processCsv);
+    document.getElementById('btn-change-csv').addEventListener('click', changeCsvFile);
     document.getElementById('btn-download-csv').addEventListener('click', downloadResults);
     document.getElementById('btn-show-all').addEventListener('click', showAllResults);
     
@@ -234,6 +244,22 @@ async function uploadModel() {
     }
 }
 
+async function useDefaultModel() {
+    // Если модель ещё не загружена — пробуем перепроверить статус
+    if (!state.modelLoaded) {
+        await checkModelStatus();
+    }
+    
+    if (state.modelLoaded) {
+        document.getElementById('model-type').textContent = state.modelType || 'RandomForestClassifier';
+        toggleElement('model-info-card', true);
+        showSuccess('Используется предустановленная модель');
+        navigate('mode-select');
+    } else {
+        showError('Предустановленная модель не найдена. Сначала обучите модель или загрузите .pkl файл.');
+    }
+}
+
 function downloadModel() {
     const API_BASE = window.API_URL || 'http://localhost:8000';
     window.open(`${API_BASE}/download-model`, '_blank');
@@ -277,7 +303,7 @@ function showPredictionResult(result) {
     
     const isApproved = prediction.loan_status === 'Approved';
     
-    statusEl.textContent = isApproved ? '✅ Approved' : '❌ Rejected';
+    statusEl.textContent = isApproved ? '✅ Одобрено' : '❌ Отказано';
     statusEl.className = `result-status ${isApproved ? 'approved' : 'rejected'}`;
     
     probEl.textContent = formatPercent(prediction.probability);
@@ -329,62 +355,114 @@ async function processCsv() {
     }
 }
 
-function renderResultsTable(result, limit) {
+// Смена CSV файла
+function changeCsvFile() {
+    toggleElement('csv-results', false);
+    toggleElement('csv-upload-card', true);
+    toggleElement('csv-upload-area', true);
+    toggleElement('csv-upload-info', false);
+    document.getElementById('csv-file').value = '';
+    state.selectedCsvFile = null;
+    state.csvResults = null;
+}
+
+// Динамический рендер таблицы с данными из CSV
+function renderDynamicTable(result, limit) {
+    const thead = document.getElementById('results-thead');
     const tbody = document.getElementById('results-tbody');
+    thead.innerHTML = '';
     tbody.innerHTML = '';
     
     const predictions = result.predictions || [];
-    const count = Math.min(predictions.length, limit);
+    if (!predictions.length) return;
     
-    for (let i = 0; i < count; i++) {
-        const tr = document.createElement('tr');
-        const pred = predictions[i];
-        
-        const tdNum = document.createElement('td');
-        tdNum.textContent = i + 1;
-        tr.appendChild(tdNum);
-        
-        const tdAge = document.createElement('td');
-        tdAge.textContent = pred.person_age !== undefined ? pred.person_age : '-';
-        tr.appendChild(tdAge);
-        
-        const tdIncome = document.createElement('td');
-        tdIncome.textContent = pred.person_income !== undefined ? formatNumber(pred.person_income) : '-';
-        tr.appendChild(tdIncome);
-        
-        const tdAmount = document.createElement('td');
-        tdAmount.textContent = pred.loan_amnt !== undefined ? formatNumber(pred.loan_amnt) : '-';
-        tr.appendChild(tdAmount);
-        
-        const tdScore = document.createElement('td');
-        tdScore.textContent = pred.credit_score !== undefined ? pred.credit_score : '-';
-        tr.appendChild(tdScore);
-        
-        const tdStatus = document.createElement('td');
-        const isApproved = pred.predicted_loan_status === 'Approved';
-        tdStatus.innerHTML = `<span class="status-badge ${isApproved ? 'approved' : 'rejected'}">
-            ${isApproved ? 'Одобрено' : 'Отказано'}
-        </span>`;
-        tr.appendChild(tdStatus);
-        
-        const tdProb = document.createElement('td');
-        tdProb.textContent = formatPercent(pred.probability || 0);
-        tr.appendChild(tdProb);
-        
-        tbody.appendChild(tr);
-    }
+    // Определяем все колонки из первой записи
+    const allKeys = Object.keys(predictions[0]);
+    
+    // Приоритетный порядок и человеческие названия
+    const columnLabels = {
+        'person_age': 'Возраст',
+        'person_income': 'Доход',
+        'person_emp_exp': 'Стаж',
+        'cb_person_cred_hist_length': 'Кред. история',
+        'person_gender': 'Пол',
+        'person_education': 'Образование',
+        'person_home_ownership': 'Жильё',
+        'loan_amnt': 'Сумма кредита',
+        'loan_int_rate': 'Ставка',
+        'loan_percent_income': '% дохода',
+        'credit_score': 'Рейтинг',
+        'loan_intent': 'Цель',
+        'previous_loan_defaults_on_file': 'Просрочки',
+        'predicted_loan_status': 'Статус',
+        'probability': 'Вероятность'
+    };
+    
+    const priorityOrder = [
+        'person_age', 'person_income', 'person_emp_exp', 'cb_person_cred_hist_length',
+        'person_gender', 'person_education', 'person_home_ownership',
+        'loan_amnt', 'loan_int_rate', 'loan_percent_income', 'credit_score',
+        'loan_intent', 'previous_loan_defaults_on_file',
+        'predicted_loan_status', 'probability'
+    ];
+    
+    // Сортируем колонки: сначала приоритетные, потом остальные
+    const sortedColumns = priorityOrder.filter(k => allKeys.includes(k));
+    const remaining = allKeys.filter(k => !priorityOrder.includes(k));
+    const columns = [...sortedColumns, ...remaining];
+    
+    // Заголовки
+    thead.innerHTML = columns.map(col =>
+        `<th>${columnLabels[col] || col}</th>`
+    ).join('');
+    
+    // Данные
+    const count = Math.min(predictions.length, limit);
+    const showData = predictions.slice(0, count);
+    
+    tbody.innerHTML = showData.map(row => {
+        const cells = columns.map(col => {
+            let val = row[col];
+            
+            if (col === 'probability') {
+                val = formatPercent(val);
+            } else if (col === 'predicted_loan_status') {
+                const isApproved = val === 'Approved';
+                return `<td><span class="status-badge ${isApproved ? 'approved' : 'rejected'}">${isApproved ? 'Одобрено' : 'Отказано'}</span></td>`;
+            } else if (col === 'person_income' || col === 'loan_amnt') {
+                val = formatNumber(val);
+            }
+            
+            return `<td>${val !== undefined && val !== null ? val : '-'}</td>`;
+        }).join('');
+        return `<tr>${cells}</tr>`;
+    }).join('');
+    
+    return { columns, total: predictions.length };
 }
 
 function showCsvResults(result) {
-    document.getElementById('total-rows').textContent = formatNumber(result.rows_processed);
-    document.getElementById('approved-count').textContent = formatNumber(result.approved_count);
-    document.getElementById('rejected-count').textContent = formatNumber(result.rejected_count);
-    document.getElementById('avg-probability').textContent = formatPercent(result.avg_probability);
+    const predictions = result.predictions || [];
     
+    // Сводка
+    document.getElementById('total-rows').textContent = formatNumber(result.total_rows || predictions.length);
+    
+    const approvedCount = predictions.filter(p => p.predicted_loan_status === 'Approved').length;
+    const rejectedCount = predictions.filter(p => p.predicted_loan_status === 'Rejected').length;
+    document.getElementById('approved-count').textContent = formatNumber(approvedCount);
+    document.getElementById('rejected-count').textContent = formatNumber(rejectedCount);
+    
+    const avgProb = predictions.length > 0
+        ? predictions.reduce((sum, p) => sum + (p.probability || 0), 0) / predictions.length
+        : 0;
+    document.getElementById('avg-probability').textContent = formatPercent(avgProb);
+    
+    // ROC-AUC
     if (result.roc_auc !== null && result.roc_auc !== undefined) {
-        document.getElementById('roc-auc-value').textContent = result.roc_auc.toFixed(3);
+        document.getElementById('roc-auc-value').textContent = (result.roc_auc * 100).toFixed(1) + '%';
         toggleElement('roc-auc-display', true);
         
+        // ROC-кривая
         const API_BASE = window.API_URL || 'http://localhost:8000';
         const rocImg = document.getElementById('roc-curve-img');
         rocImg.src = `${API_BASE}/roc-curve?t=${Date.now()}`;
@@ -394,24 +472,27 @@ function showCsvResults(result) {
         toggleElement('roc-curve-container', false);
     }
     
-    renderResultsTable(result, 50);
+    // Таблица с динамическими колонками
+    const tableInfo = renderDynamicTable(result, 50);
     
+    // Кнопка "Показать все"
     const showAllBtn = document.getElementById('btn-show-all');
-    if (result.rows_processed > 50) {
+    if (tableInfo && tableInfo.total > 50) {
         showAllBtn.style.display = 'block';
-        showAllBtn.textContent = `Показать все ${result.rows_processed} записей`;
+        showAllBtn.textContent = `Показать все ${tableInfo.total} записей`;
     } else {
         showAllBtn.style.display = 'none';
     }
     
     toggleElement('csv-results', true);
+    toggleElement('csv-upload-card', false);
     
     document.getElementById('csv-results').scrollIntoView({ behavior: 'smooth' });
 }
 
 function showAllResults() {
     if (state.csvResults) {
-        renderResultsTable(state.csvResults, state.csvResults.rows_processed);
+        renderDynamicTable(state.csvResults, state.csvResults.predictions.length);
         document.getElementById('btn-show-all').style.display = 'none';
     }
 }
@@ -420,17 +501,34 @@ function downloadResults() {
     if (!state.csvResults) return;
     
     const predictions = state.csvResults.predictions || [];
-    const data = predictions.map((pred, i) => ({
-        '№': i + 1,
-        'Prediction': pred.predicted_loan_status,
-        'Probability': (pred.probability || 0).toFixed(4)
-    }));
+    if (!predictions.length) return;
     
-    downloadCSV(data, 'predictions.csv');
+    const allKeys = Object.keys(predictions[0]);
+    
+    const csvContent = [
+        allKeys.join(','),
+        ...predictions.map(row =>
+            allKeys.map(k => {
+                let val = row[k];
+                if (typeof val === 'string' && (val.includes(',') || val.includes('"'))) {
+                    val = `"${val.replace(/"/g, '""')}"`;
+                }
+                return val ?? '';
+            }).join(',')
+        )
+    ].join('\n');
+    
+    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'predictions_results.csv';
+    link.click();
+    URL.revokeObjectURL(link.href);
 }
 
 function hideCsvResults() {
     toggleElement('csv-results', false);
+    toggleElement('csv-upload-card', true);
     toggleElement('csv-upload-area', true);
     toggleElement('csv-upload-info', false);
     document.getElementById('csv-file').value = '';

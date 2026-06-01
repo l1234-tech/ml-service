@@ -13,6 +13,8 @@ from ml.config import (  # noqa: E402
     METRICS_PATH,
     SAMPLE_PAYLOAD_PATH,
     ROC_CURVES_PATH,
+    SAMPLE_CSV_PATH,
+    SAMPLE_CSV_WITH_TARGET_PATH,
     TARGET_COL,
     RANDOM_STATE,
     TEST_SIZE,
@@ -105,6 +107,21 @@ def main():
 
     plot_roc_curves(results, ROC_CURVES_PATH)
     print(f"   ROC curves saved to {ROC_CURVES_PATH}")
+
+    # Сохраняем sample CSV для предсказаний
+    sample_size = min(50, len(X_test))
+    X_sample = X_test.head(sample_size).copy()
+    y_sample = y_test.head(sample_size).copy()
+
+    # CSV без целевой колонки — для загрузки и предсказания
+    X_sample.to_csv(SAMPLE_CSV_PATH, index=False)
+    print(f"   Sample CSV saved to {SAMPLE_CSV_PATH} ({sample_size} rows, no target)")
+
+    # CSV с целевой колонкой — для расчёта ROC-AUC
+    sample_with_target = X_sample.copy()
+    sample_with_target[TARGET_COL] = y_sample.values
+    sample_with_target.to_csv(SAMPLE_CSV_WITH_TARGET_PATH, index=False)
+    print(f"   Sample CSV with target saved to {SAMPLE_CSV_WITH_TARGET_PATH} ({sample_size} rows)")
 
     print("\n9. Testing loaded pipeline")
     try:

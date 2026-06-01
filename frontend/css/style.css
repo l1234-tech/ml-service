@@ -28,6 +28,96 @@
     min-width: 150px;
 }
 
+/* Divider */
+.divider {
+    display: flex;
+    align-items: center;
+    margin: 1.5rem 0;
+    color: var(--text-muted);
+    font-size: 1.1rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.divider::before,
+.divider::after {
+    content: '';
+    flex: 1;
+    height: 2px;
+    background: var(--border-color);
+}
+
+.divider-text {
+    padding: 0 1rem;
+}
+
+/* Default Model Section */
+.default-model-section {
+    text-align: center;
+    padding: 0.5rem 0;
+}
+
+.default-model-section .btn-large {
+    width: 100%;
+    max-width: 400px;
+}
+
+.help-text {
+    margin-top: 0.5rem;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+/* Table Actions */
+.table-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+/* Status Badges */
+.status-badge {
+    display: inline-block;
+    padding: 0.2rem 0.6rem;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.status-badge.approved {
+    background: rgba(76, 175, 80, 0.15);
+    color: #4CAF50;
+}
+
+.status-badge.rejected {
+    background: rgba(244, 67, 54, 0.15);
+    color: #F44336;
+}
+
+/* ROC-AUC Display - центрирование */
+.roc-auc-display {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 1rem;
+    margin-top: 1rem;
+}
+
+.roc-auc-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--primary);
+}
+
+.roc-auc-label {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    margin-top: 0.25rem;
+}
+
 /* ROC Curve */
 .roc-curve-container {
     text-align: center;

@@ -90,6 +90,38 @@ async def model_status():
     }
 
 
+@app.post("/train-default-model")
+async def train_default_model():
+    """Обучить модель по умолчанию"""
+    try:
+        # Импортируем и запускаем обучение
+        from ml.train import main as train_main
+
+        train_main()
+
+        # Загружаем обученную модель
+        success = model_manager.load_model(str(PIPELINE_PATH))
+        if success:
+            return {
+                "success": True,
+                "message": "Модель успешно обучена и загружена",
+                "model_type": model_manager.model_type,
+            }
+        else:
+            raise HTTPException(
+                status_code=500,
+                detail="Модель обучена, но не удалось её загрузить",
+            )
+    except HTTPException:
+        raise
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Ошибка при обучении модели: {str(e)}",
+        )
+
+
 @app.get("/download-model")
 async def download_model():
     """Скачать файл модели (.pkl)"""
@@ -180,7 +212,10 @@ async def upload_model(file: UploadFile = File(...)):
             )
         else:
             # Если не удалось загрузить — удаляем файл
-            PIPELINE_PATH.unlink(missing_ok=True)
+            try:
+                PIPELINE_PATH.unlink(missing_ok=True)
+            except PermissionError:
+                pass
             raise HTTPException(
                 status_code=400,
                 detail="Не удалось загрузить модель. Проверьте файл.",
@@ -190,7 +225,10 @@ async def upload_model(file: UploadFile = File(...)):
         raise
     except Exception as e:
         # Если ошибка — удаляем файл
-        PIPELINE_PATH.unlink(missing_ok=True)
+        try:
+            PIPELINE_PATH.unlink(missing_ok=True)
+        except PermissionError:
+            pass
         raise HTTPException(
             status_code=400,
             detail=f"Ошибка при загрузке модели: {str(e)}",

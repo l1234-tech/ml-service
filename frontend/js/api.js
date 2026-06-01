@@ -127,7 +127,7 @@ const realApi = {
         
         const result = await response.json();
         
-        // Преобразуем ответ бэкенда в формат, ожидаемый фронтендом
+        // Передаём все поля из ответа бэкенда как есть
         const predictions = result.predictions || [];
         const approvedCount = predictions.filter(p => p.predicted_loan_status === 'Approved').length;
         const rejectedCount = predictions.filter(p => p.predicted_loan_status === 'Rejected').length;
@@ -136,10 +136,7 @@ const realApi = {
             : 0;
         
         return {
-            predictions: predictions.map(p => ({
-                predicted_loan_status: p.predicted_loan_status,
-                probability: p.probability
-            })),
+            predictions: predictions, // передаём все поля (person_age, person_income, и т.д.)
             total_rows: result.total_rows || predictions.length,
             rows_processed: result.total_rows || predictions.length,
             roc_auc: result.roc_auc || null,
