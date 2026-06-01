@@ -4,7 +4,6 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import pandas as pd  # noqa: E402
-import numpy as np  # noqa: E402
 
 from ml.config import CATEGORICAL_COLS, NUMERIC_COLS, TARGET_COL  # noqa: E402
 
