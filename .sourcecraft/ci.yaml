@@ -12,20 +12,14 @@ workflows:
           - name: lint-python
             image: docker.io/library/python:3.12
             script:
-              - pip install uv
-              - cd backend && uv sync --group dev
-              - cd backend && uv run black --line-length=100 .
-              - cd backend && uv run flake8 . --ignore=W292
+              - pip install uv && cd backend && uv sync --group dev && uv run black --line-length=100 . && uv run flake8 . --ignore=W292
 
       - name: train-and-test
         cubes:
           - name: train-model
             image: docker.io/library/python:3.12
             script:
-              - pip install uv
-              - cd backend && uv sync
-              - cd backend && mkdir -p ml/artifacts
-              - cd backend && uv run python ml/train.py
+              - pip install uv && cd backend && uv sync && mkdir -p ml/artifacts && uv run python ml/train.py
             artifacts:
               paths:
                 - backend/ml/artifacts/
@@ -34,6 +28,4 @@ workflows:
             needs: ["train-model"]
             image: docker.io/library/python:3.12
             script:
-              - pip install uv
-              - cd backend && uv sync --group dev
-              - cd backend && uv run python -m pytest tests/ -v
+              - pip install uv && cd backend && uv sync --group dev && uv run python -m pytest tests/ -v
