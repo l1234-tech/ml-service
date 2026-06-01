@@ -7,12 +7,12 @@ from pathlib import Path
 # Добавляем backend в путь
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-import numpy as np
-import pandas as pd
-from fastapi import Body, FastAPI, File, HTTPException, UploadFile
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
-from fastapi.staticfiles import StaticFiles
+import numpy as np  # noqa: E402
+import pandas as pd  # noqa: E402
+from fastapi import Body, FastAPI, File, HTTPException, UploadFile  # noqa: E402
+from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
+from fastapi.responses import FileResponse  # noqa: E402
+from fastapi.staticfiles import StaticFiles  # noqa: E402
 
 from api.schemas import HealthResponse, ModelUploadResponse  # noqa: E402
 from core.model import model_manager  # noqa: E402
@@ -99,16 +99,16 @@ async def upload_model(file: UploadFile = File(...)):
             status_code=400, detail="Файл должен иметь расширение .pkl"
         )
 
-    # Сохраняем временный файл
-    temp_dir = tempfile.mkdtemp()
-    temp_path = os.path.join(temp_dir, file.filename)
+    # Создаём директорию для артефактов, если её нет
+    PIPELINE_PATH.parent.mkdir(parents=True, exist_ok=True)
 
     try:
-        with open(temp_path, "wb") as buffer:
+        # Сохраняем файл модели в постоянное место (не во временную папку!)
+        with open(str(PIPELINE_PATH), "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
 
         # Загружаем модель
-        success = model_manager.load_model(temp_path)
+        success = model_manager.load_model(str(PIPELINE_PATH))
 
         if success:
             return ModelUploadResponse(
@@ -117,14 +117,22 @@ async def upload_model(file: UploadFile = File(...)):
                 model_type=model_manager.model_type,
             )
         else:
+            # Если не удалось загрузить — удаляем файл
+            PIPELINE_PATH.unlink(missing_ok=True)
             raise HTTPException(
                 status_code=400,
                 detail="Не удалось загрузить модель. Проверьте файл.",
             )
 
-    finally:
-        # Очищаем временные файлы
-        shutil.rmtree(temp_dir, ignore_errors=True)
+    except HTTPException:
+        raise
+    except Exception as e:
+        # Если ошибка — удаляем файл
+        PIPELINE_PATH.unlink(missing_ok=True)
+        raise HTTPException(
+            status_code=400,
+            detail=f"Ошибка при загрузке модели: {str(e)}",
+        )
 
 
 @app.post("/predict")
