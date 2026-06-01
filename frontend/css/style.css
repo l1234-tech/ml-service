@@ -1,7 +1,8 @@
 /* ============================================
-   CSS Variables
+   CSS Variables - Themes
    ============================================ */
 :root {
+    /* Dark theme (default) */
     --primary: #6366f1;
     --primary-hover: #4f46e5;
     --primary-light: rgba(99, 102, 241, 0.1);
@@ -23,6 +24,26 @@
     --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
 }
 
+/* Light theme */
+[data-theme="light"] {
+    --primary: #6366f1;
+    --primary-hover: #4f46e5;
+    --primary-light: rgba(99, 102, 241, 0.1);
+    --success-color: #059669;
+    --danger-color: #dc2626;
+    --warning-color: #d97706;
+    --bg-primary: #f8fafc;
+    --bg-secondary: #f1f5f9;
+    --bg-card: #ffffff;
+    --text-primary: #1e293b;
+    --text-secondary: #64748b;
+    --text-muted: #94a3b8;
+    --border-color: #e2e8f0;
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
 /* ============================================
    Base Styles
    ============================================ */
@@ -38,6 +59,7 @@ body {
     color: var(--text-primary);
     min-height: 100vh;
     line-height: 1.6;
+    transition: background 0.3s, color 0.3s;
 }
 
 #app {
@@ -58,6 +80,7 @@ body {
     border-radius: var(--radius-lg);
     border: 1px solid var(--border-color);
     margin-bottom: 2rem;
+    transition: background 0.3s, border-color 0.3s;
 }
 
 .nav-brand {
@@ -73,6 +96,12 @@ body {
 .nav-title {
     font-size: 1.1rem;
     font-weight: 600;
+}
+
+.nav-right {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
 }
 
 .nav-status {
@@ -93,6 +122,24 @@ body {
 
 .status-dot.loaded {
     background: var(--success-color);
+}
+
+/* Theme Toggle */
+.theme-toggle {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    padding: 0.4rem 0.6rem;
+    cursor: pointer;
+    font-size: 1.1rem;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.theme-toggle:hover {
+    border-color: var(--primary);
 }
 
 /* ============================================
@@ -134,6 +181,7 @@ body {
     border-radius: var(--radius-lg);
     padding: 1.5rem;
     margin-bottom: 1.5rem;
+    transition: background 0.3s, border-color 0.3s;
 }
 
 .card h3 {
@@ -258,6 +306,7 @@ body {
     background: var(--bg-secondary);
     border-radius: var(--radius-sm);
     margin-bottom: 1rem;
+    transition: background 0.3s;
 }
 
 .file-icon {
@@ -450,6 +499,7 @@ body {
     border-radius: var(--radius-md);
     padding: 1.5rem;
     margin-bottom: 1.5rem;
+    transition: background 0.3s, border-color 0.3s;
 }
 
 .section-title {
@@ -485,7 +535,7 @@ body {
     border-radius: var(--radius-sm);
     color: var(--text-primary);
     font-size: 0.9rem;
-    transition: border-color 0.2s;
+    transition: border-color 0.2s, background 0.3s, color 0.3s;
 }
 
 .form-group input:focus,
@@ -545,6 +595,7 @@ body {
     border-radius: var(--radius-lg);
     padding: 2rem;
     text-align: center;
+    transition: background 0.3s, border-color 0.3s;
 }
 
 .result-status {
@@ -598,6 +649,7 @@ body {
     padding: 1rem;
     background: var(--bg-secondary);
     border-radius: var(--radius-sm);
+    transition: background 0.3s;
 }
 
 .summary-value {
@@ -652,6 +704,7 @@ body {
     margin-top: 1rem;
     background: var(--bg-secondary);
     border-radius: var(--radius-md);
+    transition: background 0.3s;
 }
 
 .roc-curve-container h4 {
@@ -709,6 +762,7 @@ body {
     color: var(--text-secondary);
     white-space: nowrap;
     border-bottom: 1px solid var(--border-color);
+    transition: background 0.3s;
 }
 
 .results-table td {

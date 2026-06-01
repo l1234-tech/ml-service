@@ -14,9 +14,12 @@
                 <span class="nav-icon">🏠</span>
                 <span class="nav-title">Ипотечный сервис</span>
             </div>
-            <div class="nav-status" id="model-status">
-                <span class="status-dot" id="status-dot"></span>
-                <span id="status-text">Модель не загружена</span>
+            <div class="nav-right">
+                <div class="nav-status" id="model-status">
+                    <span class="status-dot" id="status-dot"></span>
+                    <span id="status-text">Модель не загружена</span>
+                </div>
+                <button class="theme-toggle" id="theme-toggle" title="Переключить тему">🌙</button>
             </div>
         </nav>
 
@@ -125,7 +128,6 @@
                 </div>
 
                 <form class="predict-form" id="single-predict-form">
-                    <!-- Секция: Личные данные -->
                     <div class="form-section">
                         <h3 class="section-title">👤 Личные данные</h3>
                         <div class="form-grid">
@@ -156,7 +158,6 @@
                         </div>
                     </div>
 
-                    <!-- Секция: Образование -->
                     <div class="form-section">
                         <h3 class="section-title">🎓 Образование</h3>
                         <div class="form-grid">
@@ -174,7 +175,6 @@
                         </div>
                     </div>
 
-                    <!-- Секция: Жильё -->
                     <div class="form-section">
                         <h3 class="section-title">🏠 Жильё</h3>
                         <div class="form-grid">
@@ -191,7 +191,6 @@
                         </div>
                     </div>
 
-                    <!-- Секция: Кредитные параметры -->
                     <div class="form-section">
                         <h3 class="section-title">🏦 Кредитные параметры</h3>
                         <div class="form-grid">
@@ -214,7 +213,6 @@
                         </div>
                     </div>
 
-                    <!-- Секция: Цель кредита -->
                     <div class="form-section">
                         <h3 class="section-title">🎯 Цель кредита</h3>
                         <div class="form-grid">
@@ -233,7 +231,6 @@
                         </div>
                     </div>
 
-                    <!-- Секция: История -->
                     <div class="form-section">
                         <h3 class="section-title">📋 История</h3>
                         <div class="form-grid">
@@ -260,7 +257,6 @@
                     </div>
                 </form>
 
-                <!-- Результат предсказания -->
                 <div class="prediction-result" id="prediction-result" style="display: none;">
                     <div class="result-card" id="result-card">
                         <div class="result-status" id="result-status"></div>
@@ -276,7 +272,7 @@
             <section class="page" id="page-csv-predict">
                 <div class="page-header">
                     <h1>📁 Предсказание по CSV файлу</h1>
-                    <p class="subtitle">Загрузите файл с данными клиентов</p>
+                    <p class="subtitle">Загружите файл с данными клиентов</p>
                 </div>
 
                 <div class="card upload-card" id="csv-upload-card">
@@ -309,7 +305,6 @@
                     </div>
                 </div>
 
-                <!-- Результаты CSV -->
                 <div class="csv-results" id="csv-results" style="display: none;">
                     <div class="results-summary card">
                         <h3>Сводка</h3>
@@ -377,7 +372,6 @@
             </section>
         </main>
 
-        <!-- Уведомления -->
         <div class="notifications" id="notifications"></div>
     </div>
 
