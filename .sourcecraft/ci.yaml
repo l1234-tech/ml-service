@@ -13,11 +13,20 @@ workflows:
             image: docker.io/library/python:3.12
             script:
               - pip install flake8 black
-              - flake8 backend/ --max-line-length=100 --exclude=__pycache__,ml/artifacts
-              - black --check --line-length=100 backend/ --exclude='ml/artifacts'
+              - cd backend && flake8 . --max-line-length=100 --exclude=__pycache__,ml/artifacts
+              - cd backend && black --check --line-length=100 . --exclude='ml/artifacts'
 
-      - name: backend-tests
+      - name: train-and-test
         cubes:
+          - name: train-model
+            image: docker.io/library/python:3.12
+            script:
+              - pip install pandas numpy scikit-learn joblib matplotlib seaborn
+              - cd backend && python ml/train.py
+            artifacts:
+              paths:
+                - backend/ml/artifacts/
+
           - name: test-api
             image: docker.io/library/python:3.12
             script:

@@ -1,5 +1,4 @@
 import pandas as pd
-import numpy as np
 
 
 def apply_iqr_capping(df: pd.DataFrame, columns: list) -> pd.DataFrame:

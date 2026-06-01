@@ -7,30 +7,49 @@ import pandas as pd
 import numpy as np
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 from sklearn.metrics import roc_auc_score, classification_report, roc_curve
 import matplotlib.pyplot as plt
 
+from ml.config import CATEGORICAL_COLS, NUMERIC_COLS
+
+
+def _build_preprocessor():
+    """Строит ColumnTransformer: числовые -> StandardScaler, категориальные -> OneHotEncoder."""
+    numeric_transformer = StandardScaler()
+    categorical_transformer = OneHotEncoder(drop="first", handle_unknown="ignore")
+
+    preprocessor = ColumnTransformer(
+        transformers=[
+            ("num", numeric_transformer, NUMERIC_COLS),
+            ("cat", categorical_transformer, CATEGORICAL_COLS),
+        ]
+    )
+    return preprocessor
+
 
 def get_models():
-    """Возвращает словарь моделей с пайплайнами."""
+    """Возвращает словарь моделей с пайплайнами (предобработка + классификатор)."""
+    preprocessor = _build_preprocessor()
+
     return {
         "LogisticRegression": Pipeline(
             [
-                ("scaler", StandardScaler()),
+                ("preprocessor", preprocessor),
                 ("clf", LogisticRegression(random_state=42, max_iter=1000)),
             ]
         ),
         "RandomForest": Pipeline(
             [
-                ("scaler", StandardScaler()),
+                ("preprocessor", preprocessor),
                 ("clf", RandomForestClassifier(random_state=42, n_estimators=100)),
             ]
         ),
         "GradientBoosting": Pipeline(
             [
-                ("scaler", StandardScaler()),
+                ("preprocessor", preprocessor),
                 ("clf", GradientBoostingClassifier(random_state=42, n_estimators=100)),
             ]
         ),
@@ -43,7 +62,13 @@ def evaluate_model(pipeline, X_test, y_test):
     y_proba = pipeline.predict_proba(X_test)[:, 1]
     auc = roc_auc_score(y_test, y_proba)
     report = classification_report(y_test, y_pred, output_dict=True)
-    return {"auc": auc, "report": report, "y_pred": y_pred, "y_proba": y_proba}
+    return {
+        "auc": auc,
+        "report": report,
+        "y_pred": y_pred,
+        "y_proba": y_proba,
+        "y_test": y_test,
+    }
 
 
 def plot_roc_curves(results, save_path):
