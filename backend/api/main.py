@@ -90,6 +90,25 @@ async def model_status():
     }
 
 
+@app.get("/download-model")
+async def download_model():
+    """Скачать файл модели (.pkl)"""
+    if not PIPELINE_PATH.exists():
+        raise HTTPException(
+            status_code=404,
+            detail={
+                "status": "error",
+                "message": "Модель не найдена. Сначала загрузите или обучите модель.",
+            },
+        )
+
+    return FileResponse(
+        path=str(PIPELINE_PATH),
+        filename="pipeline.pkl",
+        media_type="application/octet-stream",
+    )
+
+
 @app.post("/upload-model", response_model=ModelUploadResponse)
 async def upload_model(file: UploadFile = File(...)):
     """Загрузка модели (.pkl файл)"""
