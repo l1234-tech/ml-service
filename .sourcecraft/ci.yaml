@@ -13,11 +13,11 @@ workflows:
             image: docker.io/library/python:3.12
             script: |
               set -e
-              export PYTHONPATH=/sourcecraft/workspace/backend
+              export PYTHONPATH=/backend
               pip install uv > /dev/null 2>&1
-              uv sync --directory /sourcecraft/workspace/backend --group dev --no-install-project > /dev/null 2>&1
+              uv sync --directory backend --group dev --no-install-project > /dev/null 2>&1
               
-              uv run --directory /sourcecraft/workspace/backend black --check --exclude='.venv|__pycache__' .
+              uv run --directory /backend black --check --exclude='.venv|__pycache__' .
 
       - name: train-model
         cubes:
