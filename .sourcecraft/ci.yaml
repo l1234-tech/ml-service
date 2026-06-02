@@ -11,20 +11,21 @@ workflows:
         cubes:
           - name: lint-python
             image: docker.io/library/python:3.12
-            script:
-              - pip install uv
-              # --no-install-project предотвращает сборку ml-service
-              - uv sync --directory /sourcecraft/workspace/backend --group dev --no-install-project -q
-              - uv run --directory /sourcecraft/workspace/backend black --line-length=100 --check --exclude='.venv|__pycache__' .
+            script: |
+              set -e
+              pip install uv -q
+              uv sync --directory /sourcecraft/workspace/backend --group dev --no-install-project -q
+              uv run --directory /sourcecraft/workspace/backend black --line-length=100 --check --exclude='.venv|__pycache__' .
 
       - name: train-model
         cubes:
           - name: train-model
             image: docker.io/library/python:3.12
-            script:
-              - pip install uv
-              - uv sync --directory /sourcecraft/workspace/backend --no-install-project -q
-              - uv run --directory /sourcecraft/workspace/backend python ml/train.py
+            script: |
+              set -e
+              pip install uv -q
+              uv sync --directory /sourcecraft/workspace/backend --no-install-project -q
+              uv run --directory /sourcecraft/workspace/backend python ml/train.py
             artifacts:
               paths:
                 - backend/ml/artifacts/
@@ -34,8 +35,9 @@ workflows:
         cubes:
           - name: test-api
             image: docker.io/library/python:3.12
-            script:
-              - pip install uv
-              - uv sync --directory /sourcecraft/workspace/backend --group dev --no-install-project -q
-              - rm -rf /sourcecraft/workspace/backend/ml/artifacts/*
-              - uv run --directory /sourcecraft/workspace/backend python -m pytest tests/ -v
+            script: |
+              set -e
+              pip install uv -q
+              uv sync --directory /sourcecraft/workspace/backend --group dev --no-install-project -q
+              rm -rf /sourcecraft/workspace/backend/ml/artifacts/*
+              uv run --directory /sourcecraft/workspace/backend python -m pytest tests/ -v
