@@ -16,14 +16,6 @@ dependencies = [
     "seaborn>=0.13.0",
 ]
 
-[project.scripts]
-credit-api = "api.main:run"
-
-[tool.black]
-line-length = 100
-target-version = ["py312"]
-exclude = ".venv|__pycache__|build|dist"
-
 [dependency-groups]
 dev = [
     "black>=24.0.0",

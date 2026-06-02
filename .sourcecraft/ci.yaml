@@ -16,8 +16,7 @@ workflows:
               export PYTHONPATH=/sourcecraft/workspace/backend
               pip install uv > /dev/null 2>&1
               uv sync --directory /sourcecraft/workspace/backend --group dev --no-install-project > /dev/null 2>&1
-
-              # ✅ Только проверка формата (flake8 убран)
+              
               uv run --directory /sourcecraft/workspace/backend black --check --exclude='.venv|__pycache__' .
 
       - name: train-model
