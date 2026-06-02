@@ -22,17 +22,14 @@ credit-api = "api.main:run"
 [tool.ruff]
 line-length = 100
 target-version = "py312"
-# Ruff НЕ сканирует .venv по умолчанию, но укажем явно для надежности
 exclude = [".venv", "__pycache__", "build", "dist"]
 
 [tool.ruff.lint]
-# Игнорируем только то, что реально мешает
+select = ["E", "F", "W", "I"]
 ignore = [
-    "E501",  # Длина строки контролируется formatter'ом
-    "W503",  # Устаревшее правило
-    "E203",  # Конфликтует с black/ruff format
+    "E501",   # Длина строки контролируется ruff format
+    "E203",   # Конфликтует с форматтером (whitespace before ':')
 ]
-select = ["E", "F", "W", "I"]  # E/F/W=ошибки, I=сортировка импортов
 
 [tool.ruff.format]
 quote-style = "double"

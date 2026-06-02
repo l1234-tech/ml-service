@@ -6,9 +6,10 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from ml.config import CATEGORICAL_COLS, NUMERIC_COLS  # noqa: E402
 from sklearn.compose import ColumnTransformer  # noqa: E402
 from sklearn.preprocessing import OneHotEncoder, StandardScaler  # noqa: E402
+
+from ml.config import CATEGORICAL_COLS, NUMERIC_COLS  # noqa: E402
 
 
 class ModelManager:
