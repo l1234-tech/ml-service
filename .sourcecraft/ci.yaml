@@ -22,8 +22,11 @@ workflows:
               
               # Линтинг с исключением служебных директорий
               - uv run --directory /sourcecraft/workspace/backend flake8 . \
-                  --ignore=W292,E501,W503,E203 \
-                  --exclude=.venv,__pycache__,build,dist,.eggs,*.egg-info
+                --ignore=W292,W503,E203 \
+                --max-line-length=100 \
+                --exclude=.venv,__pycache__,build,dist,.eggs,*.egg-info \
+                --statistics \
+                --count
 
       # --- TRAIN MODEL ---
       - name: train-model

@@ -1,10 +1,17 @@
 from fastapi.testclient import TestClient
 from api.main import app
+from core.model import model_manager
 
 client = TestClient(app)
 
 
 def test_model_status_without_model():
+    # Сбрасываем состояние модели, так как при старте приложения
+    # модель могла автоматически загрузиться из artifacts/pipeline.pkl
+    model_manager._is_loaded = False
+    model_manager._pipeline = None
+    model_manager._model_type = None
+
     response = client.get("/model-status")
     assert response.status_code == 200
     data = response.json()
