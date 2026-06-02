@@ -13,8 +13,8 @@ workflows:
             image: docker.io/library/python:3.12
             script:
               - pip install uv
-              # Добавлен флаг -q для тихой установки
-              - uv sync --directory /sourcecraft/workspace/backend --group dev -q
+              # --no-install-project предотвращает сборку ml-service
+              - uv sync --directory /sourcecraft/workspace/backend --group dev --no-install-project -q
               - uv run --directory /sourcecraft/workspace/backend black --line-length=100 --check --exclude='.venv|__pycache__' .
 
       - name: train-model
@@ -23,8 +23,7 @@ workflows:
             image: docker.io/library/python:3.12
             script:
               - pip install uv
-              # Добавлен флаг -q
-              - uv sync --directory /sourcecraft/workspace/backend -q
+              - uv sync --directory /sourcecraft/workspace/backend --no-install-project -q
               - uv run --directory /sourcecraft/workspace/backend python ml/train.py
             artifacts:
               paths:
@@ -37,7 +36,6 @@ workflows:
             image: docker.io/library/python:3.12
             script:
               - pip install uv
-              # Добавлен флаг -q
-              - uv sync --directory /sourcecraft/workspace/backend --group dev -q
+              - uv sync --directory /sourcecraft/workspace/backend --group dev --no-install-project -q
               - rm -rf /sourcecraft/workspace/backend/ml/artifacts/*
               - uv run --directory /sourcecraft/workspace/backend python -m pytest tests/ -v
