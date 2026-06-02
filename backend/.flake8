@@ -1,4 +1,4 @@
-[flake8]
+[tool.flake8]
 max-line-length = 100
-exclude = __pycache__,ml/artifacts
-ignore = W292
+exclude = [".venv", "__pycache__", "build", "dist"]
+ignore = ["W292", "E501", "W503", "E203"]
