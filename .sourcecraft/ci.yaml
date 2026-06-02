@@ -7,32 +7,29 @@ on:
 workflows:
   lint-and-test:
     tasks:
-      # --- ТОЛЬКО ФОРМАТИРОВАНИЕ ---
       - name: backend-lint
         cubes:
           - name: lint-python
             image: docker.io/library/python:3.12
             script:
               - pip install uv
-              - uv sync --directory /sourcecraft/workspace/backend --group dev
-              # Black --check проверяет формат, но не меняет файлы
-              # Исключаем .venv явно через маску
+              # Добавлен флаг -q для тихой установки
+              - uv sync --directory /sourcecraft/workspace/backend --group dev -q
               - uv run --directory /sourcecraft/workspace/backend black --line-length=100 --check --exclude='.venv|__pycache__' .
 
-      # --- ОБУЧЕНИЕ МОДЕЛИ ---
       - name: train-model
         cubes:
           - name: train-model
             image: docker.io/library/python:3.12
             script:
               - pip install uv
-              - uv sync --directory /sourcecraft/workspace/backend
+              # Добавлен флаг -q
+              - uv sync --directory /sourcecraft/workspace/backend -q
               - uv run --directory /sourcecraft/workspace/backend python ml/train.py
             artifacts:
               paths:
                 - backend/ml/artifacts/
 
-      # --- ТЕСТЫ ---
       - name: test-api
         needs: ["train-model"]
         cubes:
@@ -40,7 +37,7 @@ workflows:
             image: docker.io/library/python:3.12
             script:
               - pip install uv
-              - uv sync --directory /sourcecraft/workspace/backend --group dev
-              # Очищаем артефакты перед тестами
+              # Добавлен флаг -q
+              - uv sync --directory /sourcecraft/workspace/backend --group dev -q
               - rm -rf /sourcecraft/workspace/backend/ml/artifacts/*
               - uv run --directory /sourcecraft/workspace/backend python -m pytest tests/ -v
