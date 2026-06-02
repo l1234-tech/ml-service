@@ -17,11 +17,11 @@ workflows:
         pip install uv > /dev/null 2>&1
         uv sync --directory /sourcecraft/workspace/backend --group dev --no-install-project > /dev/null 2>&1
 
-        # Проверка формата через Ruff 
-        uv run --directory /sourcecraft/workspace/backend ruff format --check .
+        # Проверка формата через Black
+        uv run --directory /sourcecraft/workspace/backend black --check .
 
-        # Линтинг и проверка импортов
-        uv run --directory /sourcecraft/workspace/backend ruff check .
+        # Линтинг через flake8
+        uv run --directory /sourcecraft/workspace/backend flake8 .
 
       - name: train-model
         cubes:
