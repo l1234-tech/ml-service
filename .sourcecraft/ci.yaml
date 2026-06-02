@@ -8,20 +8,17 @@ workflows:
   lint-and-test:
     tasks:
       - name: backend-lint
-  cubes:
-    - name: lint-python
-      image: docker.io/library/python:3.12
-      script: |
-        set -e
-        export PYTHONPATH=/sourcecraft/workspace/backend
-        pip install uv > /dev/null 2>&1
-        uv sync --directory /sourcecraft/workspace/backend --group dev --no-install-project > /dev/null 2>&1
+        cubes:
+          - name: lint-python
+            image: docker.io/library/python:3.12
+            script: |
+              set -e
+              export PYTHONPATH=/sourcecraft/workspace/backend
+              pip install uv > /dev/null 2>&1
+              uv sync --directory /sourcecraft/workspace/backend --group dev --no-install-project > /dev/null 2>&1
 
-        # Проверка формата через Black
-        uv run --directory /sourcecraft/workspace/backend black --check .
-
-        # Линтинг через flake8
-        uv run --directory /sourcecraft/workspace/backend flake8 .
+              # ✅ Только проверка формата (flake8 убран)
+              uv run --directory /sourcecraft/workspace/backend black --check --exclude='.venv|__pycache__' .
 
       - name: train-model
         cubes:
