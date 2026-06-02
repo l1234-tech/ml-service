@@ -19,6 +19,9 @@ workflows:
               
               uv run --directory /backend black --check --exclude='.venv|__pycache__' .
 
+              cd backend
+              uv run flake8 --config=.flake8 .
+
       - name: train-model
         cubes:
           - name: train-model
