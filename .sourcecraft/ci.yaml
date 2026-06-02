@@ -13,8 +13,9 @@ workflows:
             image: docker.io/library/python:3.12
             script: |
               set -e
-              pip install uv -q
-              uv sync --directory /sourcecraft/workspace/backend --group dev --no-install-project -q
+              export PYTHONPATH=/sourcecraft/workspace/backend
+              pip install uv > /dev/null 2>&1
+              uv sync --directory /sourcecraft/workspace/backend --group dev --no-install-project > /dev/null 2>&1
               uv run --directory /sourcecraft/workspace/backend black --line-length=100 --check --exclude='.venv|__pycache__' .
 
       - name: train-model
@@ -23,8 +24,9 @@ workflows:
             image: docker.io/library/python:3.12
             script: |
               set -e
-              pip install uv -q
-              uv sync --directory /sourcecraft/workspace/backend --no-install-project -q
+              export PYTHONPATH=/sourcecraft/workspace/backend
+              pip install uv > /dev/null 2>&1
+              uv sync --directory /sourcecraft/workspace/backend --no-install-project > /dev/null 2>&1
               uv run --directory /sourcecraft/workspace/backend python ml/train.py
             artifacts:
               paths:
@@ -37,7 +39,8 @@ workflows:
             image: docker.io/library/python:3.12
             script: |
               set -e
-              pip install uv -q
-              uv sync --directory /sourcecraft/workspace/backend --group dev --no-install-project -q
+              export PYTHONPATH=/sourcecraft/workspace/backend
+              pip install uv > /dev/null 2>&1
+              uv sync --directory /sourcecraft/workspace/backend --group dev --no-install-project > /dev/null 2>&1
               rm -rf /sourcecraft/workspace/backend/ml/artifacts/*
               uv run --directory /sourcecraft/workspace/backend python -m pytest tests/ -v
