@@ -61,9 +61,7 @@ class ModelManager:
     def _build_preprocessor(self):
         """Строит ColumnTransformer для предобработки сырых данных."""
         numeric_transformer = StandardScaler()
-        categorical_transformer = OneHotEncoder(
-            drop="first", handle_unknown="ignore"
-        )
+        categorical_transformer = OneHotEncoder(drop="first", handle_unknown="ignore")
 
         preprocessor = ColumnTransformer(
             transformers=[
