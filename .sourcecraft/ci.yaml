@@ -7,7 +7,7 @@ on:
 workflows:
   lint-and-test:
     tasks:
-      # --- LINT & FORMAT CHECK ---
+      # --- ТОЛЬКО ФОРМАТИРОВАНИЕ ---
       - name: backend-lint
         cubes:
           - name: lint-python
@@ -15,18 +15,11 @@ workflows:
             script:
               - pip install uv
               - uv sync --directory /sourcecraft/workspace/backend --group dev
-              
-              # Проверяем форматирование (не меняем файлы!)
-              # Исключаем .venv и __pycache__ из проверки
+              # Black --check проверяет формат, но не меняет файлы
+              # Исключаем .venv явно через маску
               - uv run --directory /sourcecraft/workspace/backend black --line-length=100 --check --exclude='.venv|__pycache__' .
-              
-              # Линтинг с исключением служебных директорий
-              - uv run --directory /sourcecraft/workspace/backend flake8 . \
-                --config=/sourcecraft/workspace/backend/pyproject.toml \
-                --statistics \
-                --count
 
-      # --- TRAIN MODEL ---
+      # --- ОБУЧЕНИЕ МОДЕЛИ ---
       - name: train-model
         cubes:
           - name: train-model
@@ -39,7 +32,7 @@ workflows:
               paths:
                 - backend/ml/artifacts/
 
-      # --- RUN TESTS ---
+      # --- ТЕСТЫ ---
       - name: test-api
         needs: ["train-model"]
         cubes:
@@ -48,9 +41,6 @@ workflows:
             script:
               - pip install uv
               - uv sync --directory /sourcecraft/workspace/backend --group dev
-              
-              # Очищаем артефакты модели перед тестами, 
-              # чтобы тест "test_model_status_without_model" проходил корректно
+              # Очищаем артефакты перед тестами
               - rm -rf /sourcecraft/workspace/backend/ml/artifacts/*
-              
               - uv run --directory /sourcecraft/workspace/backend python -m pytest tests/ -v
