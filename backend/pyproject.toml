@@ -19,6 +19,9 @@ dependencies = [
 [project.scripts]
 credit-api = "api.main:run"
 
+[tool.uv]
+package = false
+
 [tool.ruff]
 line-length = 100
 target-version = "py312"
