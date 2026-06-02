@@ -17,14 +17,15 @@ dependencies = [
 ]
 
 [project.scripts]
-credit-api = "backend.api.main:run"
+credit-api = "api.main:run"  
 
 [build-system]
 requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
-[tool.setuptools]
-packages = ["api", "core", "ml"]
+[tool.setuptools.packages.find]
+where = ["."]  
+include = ["api*", "core*", "ml*"]
 
 [dependency-groups]
 dev = [
