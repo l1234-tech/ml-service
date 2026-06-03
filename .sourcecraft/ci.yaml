@@ -18,11 +18,15 @@ workflows:
             image: docker.io/library/python:3.12
             script:
               - set -e
-              - export PYTHONPATH=/backend
+              # Устанавливаем PYTHONPATH в зависимости от того, где лежит код
+              - export PYTHONPATH=/sourcecraft/workspace/backend
               - pip install uv > /dev/null 2>&1
-              - uv sync --directory backend --group dev --no-install-project > /dev/null 2>&1
-              - uv run --directory /backend black --check --exclude='.venv|__pycache__' .
-              - cd backend
+              # Используем полный путь, как в других задачах
+              - uv sync --directory /sourcecraft/workspace/backend --group dev --no-install-project > /dev/null 2>&1
+              # Запускаем black из корня проекта или из папки backend
+              - cd /sourcecraft/workspace/backend
+              - uv run black --check --exclude='.venv|__pycache__' .
+              # Запускаем flake8
               - uv run flake8 --config=.flake8 .
 
       - name: train-model
