@@ -3,7 +3,7 @@
 ## Запуск
 ```bash
 cd backend
-uvicorn main:app --reload
+uv run uvicorn api.main:app --reload
 ```
 
 ## Тесты
@@ -15,7 +15,7 @@ python -m pytest tests/ -v
 ## Обучение модели
 ```bash
 cd backend
-python -m ml.train
+uv run python ml/train.py
 ```
 
 ## Зависимости
