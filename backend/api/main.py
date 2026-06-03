@@ -2,12 +2,10 @@ import shutil
 import sys
 import traceback
 from pathlib import Path
-
-# Добавляем backend в путь
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
+import uvicorn
 import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
+
 from fastapi import Body, FastAPI, File, HTTPException, UploadFile  # noqa: E402
 from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
 from fastapi.responses import FileResponse  # noqa: E402
@@ -21,6 +19,9 @@ from ml.config import (
     SAMPLE_CSV_PATH,
     SAMPLE_CSV_WITH_TARGET_PATH,
 )  # noqa: E402
+
+# Добавляем backend в путь
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 # Авто-загрузка модели при старте
 print("Checking for model...")
@@ -368,7 +369,6 @@ async def predict_from_csv(file: UploadFile = None):
 
 def run():
     """Функция для запуска через скрипт"""
-    import uvicorn
 
     uvicorn.run("backend.api.main:app", host="0.0.0.0", port=8000, reload=True)
 
