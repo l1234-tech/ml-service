@@ -16,27 +16,25 @@ workflows:
         cubes:
           - name: lint-python
             image: docker.io/library/python:3.12
-            script: |
-              set -e
-              export PYTHONPATH=/backend
-              pip install uv > /dev/null 2>&1
-              uv sync --directory backend --group dev --no-install-project > /dev/null 2>&1
-              
-              uv run --directory /backend black --check --exclude='.venv|__pycache__' .
-
-              cd backend
-              uv run flake8 --config=.flake8 .
+            script:
+              - set -e
+              - export PYTHONPATH=/backend
+              - pip install uv > /dev/null 2>&1
+              - uv sync --directory backend --group dev --no-install-project > /dev/null 2>&1
+              - uv run --directory /backend black --check --exclude='.venv|__pycache__' .
+              - cd backend
+              - uv run flake8 --config=.flake8 .
 
       - name: train-model
         cubes:
           - name: train-model
             image: docker.io/library/python:3.12
-            script: |
-              set -e
-              export PYTHONPATH=/sourcecraft/workspace/backend
-              pip install uv > /dev/null 2>&1
-              uv sync --directory /sourcecraft/workspace/backend --no-install-project > /dev/null 2>&1
-              uv run --directory /sourcecraft/workspace/backend python ml/train.py
+            script:
+              - set -e
+              - export PYTHONPATH=/sourcecraft/workspace/backend
+              - pip install uv > /dev/null 2>&1
+              - uv sync --directory /sourcecraft/workspace/backend --no-install-project > /dev/null 2>&1
+              - uv run --directory /sourcecraft/workspace/backend python ml/train.py
             artifacts:
               paths:
                 - backend/ml/artifacts/
@@ -46,10 +44,10 @@ workflows:
         cubes:
           - name: test-api
             image: docker.io/library/python:3.12
-            script: |
-              set -e
-              export PYTHONPATH=/sourcecraft/workspace/backend
-              pip install uv > /dev/null 2>&1
-              uv sync --directory /sourcecraft/workspace/backend --group dev --no-install-project > /dev/null 2>&1
-              rm -rf /sourcecraft/workspace/backend/ml/artifacts/*
-              uv run --directory /sourcecraft/workspace/backend python -m pytest tests/ -v
+            script:
+              - set -e
+              - export PYTHONPATH=/sourcecraft/workspace/backend
+              - pip install uv > /dev/null 2>&1
+              - uv sync --directory /sourcecraft/workspace/backend --group dev --no-install-project > /dev/null 2>&1
+              - rm -rf /sourcecraft/workspace/backend/ml/artifacts/*
+              - uv run --directory /sourcecraft/workspace/backend python -m pytest tests/ -v
