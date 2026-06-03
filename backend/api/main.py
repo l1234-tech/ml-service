@@ -2,12 +2,10 @@ import shutil
 import sys
 import traceback
 from pathlib import Path
-
-# Добавляем backend в путь
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
+import uvicorn
 import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
+
 from fastapi import Body, FastAPI, File, HTTPException, UploadFile  # noqa: E402
 from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
 from fastapi.responses import FileResponse  # noqa: E402
@@ -15,8 +13,15 @@ from fastapi.staticfiles import StaticFiles  # noqa: E402
 
 from api.schemas import HealthResponse, ModelUploadResponse  # noqa: E402
 from core.model import model_manager  # noqa: E402
-from ml.config import PIPELINE_PATH, ROC_CURVES_PATH, SAMPLE_CSV_PATH, SAMPLE_CSV_WITH_TARGET_PATH  # noqa: E402
+from ml.config import (
+    PIPELINE_PATH,
+    ROC_CURVES_PATH,
+    SAMPLE_CSV_PATH,
+    SAMPLE_CSV_WITH_TARGET_PATH,
+)  # noqa: E402
 
+# Добавляем backend в путь
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 # Авто-загрузка модели при старте
 print("Checking for model...")
@@ -50,9 +55,7 @@ app.add_middleware(
 # Настройка статических файлов фронтенда
 FRONTEND_DIR = Path(__file__).parent.parent.parent / "frontend"
 if FRONTEND_DIR.exists():
-    app.mount(
-        "/static", StaticFiles(directory=str(FRONTEND_DIR / "css")), name="css"
-    )
+    app.mount("/static", StaticFiles(directory=str(FRONTEND_DIR / "css")), name="css")
     app.mount("/js", StaticFiles(directory=str(FRONTEND_DIR / "js")), name="js")
     print(f"[OK] Frontend static files mounted from: {FRONTEND_DIR}")
 else:
@@ -189,9 +192,7 @@ async def get_sample_csv():
 async def upload_model(file: UploadFile = File(...)):
     """Загрузка модели (.pkl файл)"""
     if not file.filename.endswith(".pkl"):
-        raise HTTPException(
-            status_code=400, detail="Файл должен иметь расширение .pkl"
-        )
+        raise HTTPException(status_code=400, detail="Файл должен иметь расширение .pkl")
 
     # Создаём директорию для артефактов, если её нет
     PIPELINE_PATH.parent.mkdir(parents=True, exist_ok=True)
@@ -263,9 +264,7 @@ async def predict(
         results = []
         for i in range(len(df)):
             row = df.iloc[i].to_dict()
-            row["loan_status"] = (
-                "Approved" if int(predictions[i]) == 1 else "Rejected"
-            )
+            row["loan_status"] = "Approved" if int(predictions[i]) == 1 else "Rejected"
             row["probability"] = round(float(probabilities[i][1]), 4)
             results.append(row)
 
@@ -341,9 +340,7 @@ async def predict_from_csv(file: UploadFile = None):
         results = []
         for i in range(len(X)):
             row = X.iloc[i].to_dict()
-            row["predicted_loan_status"] = (
-                "Approved" if int(predictions[i]) == 1 else "Rejected"
-            )
+            row["predicted_loan_status"] = "Approved" if int(predictions[i]) == 1 else "Rejected"
             row["probability"] = round(float(probabilities[i][1]), 4)
             results.append(row)
 
@@ -372,7 +369,6 @@ async def predict_from_csv(file: UploadFile = None):
 
 def run():
     """Функция для запуска через скрипт"""
-    import uvicorn
 
     uvicorn.run("backend.api.main:app", host="0.0.0.0", port=8000, reload=True)
 

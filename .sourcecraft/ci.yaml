@@ -1,8 +1,8 @@
 on:
   push:
-    - workflows: [lint-and-test]
+    branches: [main]
   pull_request:
-    - workflows: [lint-and-test]
+    branches: [main]
 
 workflows:
   lint-and-test:
@@ -11,28 +11,40 @@ workflows:
         cubes:
           - name: lint-python
             image: docker.io/library/python:3.12
-            script:
-              - pip install uv
-              - uv sync --directory /sourcecraft/workspace/backend --group dev
-              - uv run --directory /sourcecraft/workspace/backend black --line-length=100 /sourcecraft/workspace/backend/
-              - uv run --directory /sourcecraft/workspace/backend flake8 /sourcecraft/workspace/backend/ --ignore=W292
+            script: |
+              set -e
+              export PYTHONPATH=/backend
+              pip install uv > /dev/null 2>&1
+              uv sync --directory backend --group dev --no-install-project > /dev/null 2>&1
+              
+              uv run --directory /backend black --check --exclude='.venv|__pycache__' .
 
-      - name: train-and-test
+              cd backend
+              uv run flake8 --config=.flake8 .
+
+      - name: train-model
         cubes:
           - name: train-model
             image: docker.io/library/python:3.12
-            script:
-              - pip install uv
-              - uv sync --directory /sourcecraft/workspace/backend
-              - uv run --directory /sourcecraft/workspace/backend python ml/train.py
+            script: |
+              set -e
+              export PYTHONPATH=/sourcecraft/workspace/backend
+              pip install uv > /dev/null 2>&1
+              uv sync --directory /sourcecraft/workspace/backend --no-install-project > /dev/null 2>&1
+              uv run --directory /sourcecraft/workspace/backend python ml/train.py
             artifacts:
               paths:
                 - backend/ml/artifacts/
 
+      - name: test-api
+        needs: ["train-model"]
+        cubes:
           - name: test-api
-            needs: ["train-model"]
             image: docker.io/library/python:3.12
-            script:
-              - pip install uv
-              - uv sync --directory /sourcecraft/workspace/backend --group dev
-              - uv run --directory /sourcecraft/workspace/backend python -m pytest tests/ -v
+            script: |
+              set -e
+              export PYTHONPATH=/sourcecraft/workspace/backend
+              pip install uv > /dev/null 2>&1
+              uv sync --directory /sourcecraft/workspace/backend --group dev --no-install-project > /dev/null 2>&1
+              rm -rf /sourcecraft/workspace/backend/ml/artifacts/*
+              uv run --directory /sourcecraft/workspace/backend python -m pytest tests/ -v

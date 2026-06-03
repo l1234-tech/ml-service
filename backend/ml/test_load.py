@@ -4,8 +4,9 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import pandas as pd  # noqa: E402
-from ml.utils import load_object  # noqa: E402
+
 from ml.config import PIPELINE_PATH, SAMPLE_PAYLOAD_PATH  # noqa: E402
+from ml.utils import load_object  # noqa: E402
 
 
 def test_load_pipeline():

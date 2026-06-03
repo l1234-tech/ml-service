@@ -16,20 +16,15 @@ dependencies = [
     "seaborn>=0.13.0",
 ]
 
-[project.scripts]
-credit-api = "backend.api.main:run"
-
-[build-system]
-requires = ["setuptools>=61.0"]
-build-backend = "setuptools.build_meta"
-
-[tool.setuptools]
-packages = ["api", "core", "ml"]
-
 [dependency-groups]
 dev = [
-    "black>=26.5.0",
-    "flake8>=7.3.0",
+    "black>=24.0.0",
     "pytest>=8.0.0",
+    "flake8>=7.0.0",
     "pytest-asyncio>=0.24.0",
 ]
+
+[tool.black]
+line-length = 120
+target-version = ['py311']
+include = '\.pyi?$'

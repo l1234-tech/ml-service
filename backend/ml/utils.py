@@ -1,7 +1,8 @@
 import json
-import joblib
 from pathlib import Path
 from typing import Any
+
+import joblib
 
 
 def save_object(obj: Any, path: Path) -> None:

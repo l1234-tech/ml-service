@@ -7,26 +7,26 @@ import pandas as pd  # noqa: E402
 from sklearn.model_selection import train_test_split  # noqa: E402
 
 from ml.config import (  # noqa: E402
-    DATA_PATH,
-    ARTIFACTS_DIR,
     ALL_MODELS_DIR,
-    PIPELINE_PATH,
+    ARTIFACTS_DIR,
+    DATA_PATH,
+    GRADIENT_BOOSTING_PATH,
+    IQR_COLS,
+    LOGISTIC_REGRESSION_PATH,
     METRICS_PATH,
-    SAMPLE_PAYLOAD_PATH,
+    PIPELINE_PATH,
+    RANDOM_FOREST_PATH,
+    RANDOM_STATE,
     ROC_CURVES_PATH,
     SAMPLE_CSV_PATH,
     SAMPLE_CSV_WITH_TARGET_PATH,
-    LOGISTIC_REGRESSION_PATH,
-    RANDOM_FOREST_PATH,
-    GRADIENT_BOOSTING_PATH,
+    SAMPLE_PAYLOAD_PATH,
     TARGET_COL,
-    RANDOM_STATE,
     TEST_SIZE,
-    IQR_COLS,
 )
+from ml.models import evaluate_model, get_models, plot_roc_curves  # noqa: E402
 from ml.preprocessing import apply_iqr_capping  # noqa: E402
-from ml.models import get_models, evaluate_model, plot_roc_curves  # noqa: E402
-from ml.utils import save_object, save_json  # noqa: E402
+from ml.utils import save_json, save_object  # noqa: E402
 
 
 def main():
